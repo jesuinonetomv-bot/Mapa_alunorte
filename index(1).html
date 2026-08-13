@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa Operacional - Alunorte</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    :root {
+      --bg: #0f1720;
+      --panel: #18232d;
+      --panel-2: #22313d;
+      --text: #f4f7f9;
+      --muted: #a8b3bc;
+      --accent: #43807a;
+      --danger: #b95946;
+      --border: rgba(255,255,255,.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, var(--panel), #111a22);
+      border-right: 1px solid var(--border);
+      padding: 22px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .section {
+      margin-top: 22px;
+    }
+
+    .section h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      margin: 6px 0;
+    }
+
+    .metric span:first-child { color: var(--muted); }
+
+    button, .file-label {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s ease;
+      font-size: 13px;
+      text-align: center;
+      display: block;
+    }
+
+    button:hover, .file-label:hover { transform: translateY(-1px); }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .secondary {
+      background: #2d3d49;
+      color: white;
+      border: 1px solid var(--border);
+    }
+
+    .danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .hidden-input { display: none; }
+
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      margin: 8px 0;
+      color: #dce4e9;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex: 0 0 11px;
+    }
+
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 999;
+      display: flex;
+      gap: 8px;
+    }
+
+    .chip {
+      background: rgba(15, 23, 32, .92);
+      color: white;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      backdrop-filter: blur(8px);
+    }
+
+    @media (max-width: 800px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        bottom: 10px;
+        width: 290px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        box-shadow: 0 18px 50px rgba(0,0,0,.35);
+      }
+      #map { height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div>
+          <h1>Mapa Operacional</h1>
+          <div class="subtitle">Refinaria Alunorte</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Percurso atual</h2>
+        <div class="card">
+          <div class="metric"><span>Pontos GPS</span><strong id="pointCount">87</strong></div>
+          <div class="metric"><span>Distância</span><strong id="distance">1,50 km</strong></div>
+          <div class="metric"><span>Status</span><strong id="routeStatus">Carregado</strong></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Dados</h2>
+        <label class="file-label primary" for="gpxFile">Carregar outro GPX</label>
+        <input class="hidden-input" type="file" id="gpxFile" accept=".gpx,application/gpx+xml" />
+        <div style="height:8px"></div>
+        <button class="secondary" id="fitBtn">Centralizar percurso</button>
+        <div style="height:8px"></div>
+        <button class="danger" id="clearBtn">Limpar percurso</button>
+      </div>
+
+      <div class="section">
+        <h2>Legenda</h2>
+        <div class="card">
+          <div class="legend-item"><span class="dot" style="background:#2b7fff"></span> Percurso GPS</div>
+          <div class="legend-item"><span class="dot" style="background:#2ecc71"></span> Início</div>
+          <div class="legend-item"><span class="dot" style="background:#e67e22"></span> Fim</div>
+          <div class="legend-item"><span class="dot" style="background:#b95946"></span> Via bloqueada</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Próxima etapa</h2>
+        <div class="card status">
+          Esta versão já lê arquivos GPX no navegador. Depois vamos acrescentar subestações, Sala de Automação, Ambulatório, vias bloqueadas e cálculo de rota.
+        </div>
+      </div>
+    </aside>
+
+    <main style="position:relative;">
+      <div class="topbar">
+        <div class="chip">Protótipo v0.1</div>
+      </div>
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+  </script>
+
+  <script>
+    // 87 pontos reais do arquivo Primeiro_teste.gpx
+    const initialPoints = [
+      [-1.5528436,-48.7322755],
+      [-1.5522112,-48.7321207],
+      [-1.5516658,-48.7317553],
+      [-1.5513770,-48.7315242],
+      [-1.5512773,-48.7314450],
+      [-1.5509593,-48.7312885],
+      [-1.5503169,-48.7309210],
+      [-1.5496476,-48.7305208],
+      [-1.5491590,-48.7303004],
+      [-1.5489402,-48.7304155],
+      [-1.5488709,-48.7304786],
+      [-1.5487732,-48.7304561],
+      [-1.5486755,-48.7304725],
+      [-1.5486183,-48.7305450],
+      [-1.5485431,-48.7306004],
+      [-1.5484992,-48.7306845],
+      [-1.5489285,-48.7304724],
+      [-1.5488507,-48.7305243],
+      [-1.5487272,-48.7305947],
+      [-1.5485971,-48.7307052],
+      [-1.5484724,-48.7308349],
+      [-1.5484587,-48.7309265],
+      [-1.5483701,-48.7309844],
+      [-1.5482774,-48.7310197],
+      [-1.5482092,-48.7310795],
+      [-1.5481436,-48.7312141],
+      [-1.5480734,-48.7313186],
+      [-1.5479889,-48.7313763],
+      [-1.5479201,-48.7314389],
+      [-1.5478953,-48.7315580],
+      [-1.5478818,-48.7316752],
+      [-1.5477648,-48.7318596],
+      [-1.5476907,-48.7319628],
+      [-1.5476172,-48.7320412],
+      [-1.5475487,-48.7321154],
+      [-1.5474910,-48.7322411],
+      [-1.5473801,-48.7323322],
+      [-1.5473217,-48.7324084],
+      [-1.5472305,-48.7324080],
+      [-1.5471513,-48.7323594],
+      [-1.5469804,-48.7323346],
+      [-1.5469104,-48.7323977],
+      [-1.5468530,-48.7324748],
+      [-1.5467555,-48.7324577],
+      [-1.5466414,-48.7324188],
+      [-1.5465665,-48.7324722],
+      [-1.5465004,-48.7325698],
+      [-1.5464580,-48.7326849],
+      [-1.5463835,-48.7327755],
+      [-1.5462869,-48.7327734],
+      [-1.5462028,-48.7327018],
+      [-1.5461075,-48.7326597],
+      [-1.5460155,-48.7325943],
+      [-1.5459064,-48.7325201],
+      [-1.5458089,-48.7324677],
+      [-1.5457346,-48.7323936],
+      [-1.5456516,-48.7323533],
+      [-1.5455540,-48.7322949],
+      [-1.5454494,-48.7323392],
+      [-1.5453732,-48.7324526],
+      [-1.5453268,-48.7325732],
+      [-1.5452770,-48.7326557],
+      [-1.5452257,-48.7327341],
+      [-1.5451699,-48.7328092],
+      [-1.5451081,-48.7328811],
+      [-1.5450212,-48.7329323],
+      [-1.5449748,-48.7330261],
+      [-1.5449253,-48.7331266],
+      [-1.5448615,-48.7332262],
+      [-1.5448102,-48.7333253],
+      [-1.5447380,-48.7333864],
+      [-1.5446114,-48.7333543],
+      [-1.5444933,-48.7333015],
+      [-1.5443678,-48.7332541],
+      [-1.5442606,-48.7331899],
+      [-1.5441503,-48.7331530],
+      [-1.5440521,-48.7330809],
+      [-1.5439547,-48.7330352],
+      [-1.5438575,-48.7329625],
+      [-1.5437748,-48.7328911],
+      [-1.5437054,-48.7328219],
+      [-1.5435775,-48.7327814],
+      [-1.5434743,-48.7327661],
+      [-1.5434003,-48.7327106],
+      [-1.5433204,-48.7326654],
+      [-1.5432386,-48.7327092],
+      [-1.5431847,-48.7327859]
+    ];
+
+    const map = L.map('map', { zoomControl: true }).setView([-1.5485, -48.2320], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 20,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let routeLayer = null;
+    let startMarker = null;
+    let endMarker = null;
+    let currentPoints = [];
+
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const toRad = d => d * Math.PI / 180;
+      const p1 = toRad(lat1), p2 = toRad(lat2);
+      const dp = toRad(lat2 - lat1), dl = toRad(lon2 - lon1);
+      const a = Math.sin(dp/2)**2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2)**2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+
+    function calculateDistance(points) {
+      let total = 0;
+      for (let i = 1; i < points.length; i++) {
+        total += haversine(points[i-1][0], points[i-1][1], points[i][0], points[i][1]);
+      }
+      return total;
+    }
+
+    function renderRoute(points, fit = true) {
+      if (!points.length) return;
+      clearRoute(false);
+      currentPoints = points;
+
+      routeLayer = L.polyline(points, {
+        color: '#2b7fff',
+        weight: 5,
+        opacity: 0.9
+      }).addTo(map);
+
+      startMarker = L.circleMarker(points[0], {
+        radius: 8,
+        color: '#ffffff',
+        weight: 2,
+        fillColor: '#2ecc71',
+        fillOpacity: 1
+      }).bindPopup('<strong>Início do percurso</strong>').addTo(map);
+
+      endMarker = L.circleMarker(points[points.length - 1], {
+        radius: 8,
+        color: '#ffffff',
+        weight: 2,
+        fillColor: '#e67e22',
+        fillOpacity: 1
+      }).bindPopup('<strong>Fim do percurso</strong>').addTo(map);
+
+      const distance = calculateDistance(points) / 1000;
+      document.getElementById('pointCount').textContent = points.length;
+      document.getElementById('distance').textContent = distance.toFixed(2).replace('.', ',') + ' km';
+      document.getElementById('routeStatus').textContent = 'Carregado';
+
+      if (fit) map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+    }
+
+    function clearRoute(resetMetrics = true) {
+      if (routeLayer) map.removeLayer(routeLayer);
+      if (startMarker) map.removeLayer(startMarker);
+      if (endMarker) map.removeLayer(endMarker);
+      routeLayer = startMarker = endMarker = null;
+      currentPoints = [];
+
+      if (resetMetrics) {
+        document.getElementById('pointCount').textContent = '0';
+        document.getElementById('distance').textContent = '0,00 km';
+        document.getElementById('routeStatus').textContent = 'Vazio';
+      }
+    }
+
+    function parseGPX(xmlText) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, 'application/xml');
+      const parserError = xml.querySelector('parsererror');
+      if (parserError) throw new Error('GPX inválido ou corrompido.');
+
+      const nodes = [...xml.getElementsByTagName('trkpt')];
+      const points = nodes.map(node => [
+        Number(node.getAttribute('lat')),
+        Number(node.getAttribute('lon'))
+      ]).filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
+
+      if (!points.length) throw new Error('Nenhum ponto de trilha encontrado no GPX.');
+      return points;
+    }
+
+    document.getElementById('gpxFile').addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const points = parseGPX(reader.result);
+          renderRoute(points, true);
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById('fitBtn').addEventListener('click', () => {
+      if (routeLayer) map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => clearRoute(true));
+
+    // Exibe automaticamente o percurso de teste ao abrir o arquivo.
+    renderRoute(initialPoints, true);
+  </script>
+</body>
+</html>
