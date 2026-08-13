@@ -35,12 +35,35 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
 #permissionOverlay{position:fixed;inset:0;background:rgba(38,50,56,.84);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px}
 .permission-box{background:#fff;max-width:460px;border-radius:16px;padding:20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
 .permission-box p{color:#55616a;line-height:1.5}
+
+#mapWrap{position:relative;height:100%;min-height:420px}
+#map{height:100%;min-height:420px}
+.map-actions{
+  position:absolute;z-index:1000;left:50%;bottom:18px;transform:translateX(-50%);
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+  width:min(96%,720px);pointer-events:none
+}
+.map-actions button{
+  pointer-events:auto;box-shadow:0 3px 12px rgba(0,0,0,.28);
+  border:2px solid rgba(255,255,255,.9)
+}
+.recording-pill{
+  position:absolute;z-index:1000;top:12px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.95);padding:8px 12px;border-radius:999px;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:12px;font-weight:700;
+  display:none
+}
+.recording-pill.on{display:block}
+.recording-pill .rec-dot{
+  display:inline-block;width:9px;height:9px;border-radius:50%;background:#b95946;margin-right:6px
+}
+
 @media(max-width:800px){#app{grid-template-columns:1fr;grid-template-rows:auto 1fr}aside{max-height:47vh;border-right:0;border-bottom:1px solid #dfe4e7}#map{min-height:53vh}}
 </style>
 </head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.7</span></h1><small>Mapa vivo por localização</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.8</span></h1><small>Mapa vivo por localização</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -50,7 +73,7 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
     <div id="gpsStatus" class="status">Aguardando autorização.</div>
     <div class="row" style="margin-top:10px">
       <button id="btnLocate">Minha localização</button>
-      <button id="btnRecord" class="secondary" disabled>Pausar gravação</button>
+      <button id="btnRecord" class="secondary" disabled>Iniciar gravação</button>
     </div>
     <div class="kpis">
       <div><b id="kRoads">0</b><span>trechos</span></div>
@@ -90,7 +113,15 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
     <p style="font-size:11px;color:#6c7780">Nesta versão os novos dados ficam salvos neste aparelho. O próximo passo é sincronizar todos os usuários em um banco online.</p>
   </div>
 </aside>
-<div id="map"></div>
+<div id="mapWrap">
+  <div id="map"></div>
+  <div id="recordingPill" class="recording-pill"><span class="rec-dot"></span>Gravando novo percurso</div>
+  <div class="map-actions">
+    <button id="btnMapRecord" class="secondary" disabled>▶ Iniciar gravação</button>
+    <button id="btnMapPoint">＋ Adicionar ponto</button>
+    <button id="btnMapBlock" class="danger">⛔ Adicionar bloqueio</button>
+  </div>
+</div>
 </div>
 
 <div id="permissionOverlay">
@@ -118,7 +149,7 @@ const map=L.map("map");
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap"}).addTo(map);
 
 let state=loadState(), currentPosition=null, gpsMarker=null, accuracyLayer=null;
-let watchId=null, recording=true, activeTraceIndex=null, routeLayer=null, blockMode=false;
+let watchId=null, recording=false, activeTraceIndex=null, routeLayer=null, blockMode=false;
 let roadLayers=[], pointLayers=[];
 
 function defaults(){return {traces:[SEED_TRACK],points:SEED_POINTS,blockedEdges:[]}}
@@ -258,6 +289,7 @@ function acceptPosition(p, centerNow){
 
  document.getElementById("permissionOverlay").style.display="none";
  document.getElementById("btnRecord").disabled=false;
+ document.getElementById("btnMapRecord").disabled=false;
 
  const quality = acc<=15 ? "excelente" : acc<=35 ? "boa" : acc<=80 ? "aproximada" : "baixa";
  setGps("GPS ativo • precisão "+quality+": ±"+acc+" m",true);
@@ -317,11 +349,40 @@ function recordPoint(p,acc){
  const t=state.traces[activeTraceIndex], last=t[t.length-1];
  if(hav(last,p)>=6){t.push(p);save()}
 }
+function updateRecordingUi(){
+ const side=document.getElementById("btnRecord");
+ const mapBtn=document.getElementById("btnMapRecord");
+ const pill=document.getElementById("recordingPill");
+
+ if(recording){
+   side.textContent="Parar gravação";
+   side.className="danger";
+   mapBtn.textContent="■ Parar gravação";
+   mapBtn.className="danger";
+   pill.classList.add("on");
+   setGps("GPS ativo • gravando percurso",true);
+ }else{
+   side.textContent="Iniciar gravação";
+   side.className="secondary";
+   mapBtn.textContent="▶ Iniciar gravação";
+   mapBtn.className="secondary";
+   pill.classList.remove("on");
+ }
+}
+
 function toggleRecord(){
+ if(!currentPosition){
+   alert("Aguarde o GPS encontrar sua localização antes de iniciar a gravação.");
+   return;
+ }
  recording=!recording;
- document.getElementById("btnRecord").textContent=recording?"Pausar gravação":"Retomar gravação";
- document.getElementById("btnRecord").className=recording?"secondary":"";
- if(recording)activeTraceIndex=null
+ if(recording){
+   activeTraceIndex=null;
+   recordPoint(currentPosition, 1);
+ }else{
+   activeTraceIndex=null;
+ }
+ updateRecordingUi();
 }
 
 function renderRoads(){
@@ -371,10 +432,23 @@ function renderAll(){
 }
 
 function addPoint(){
- if(!currentPosition){alert("Aguarde sua localização aparecer.");return}
- const name=prompt("Nome do ponto:");if(!name)return;
- const cat=prompt("Categoria (Subestação, Prédio, Restaurante, Entrada etc.):","Local")||"Local";
- state.points.push({id:"p-"+Date.now(),name:name.trim(),category:cat.trim(),lat:currentPosition[0],lon:currentPosition[1]});save()
+ if(!currentPosition){
+   alert("Ainda não temos sua posição. Aguarde o ponto azul aparecer no mapa.");
+   return;
+ }
+ const name=prompt("Nome do ponto\nEx.: SE-02A-1, Ambulatório, Sala de Automação:");
+ if(!name)return;
+ const cat=prompt("Categoria\nEx.: Subestação, Prédio, Restaurante, Entrada:","Local")||"Local";
+ state.points.push({
+   id:"p-"+Date.now(),
+   name:name.trim(),
+   category:cat.trim(),
+   lat:currentPosition[0],
+   lon:currentPosition[1],
+   createdAt:new Date().toISOString()
+ });
+ save();
+ alert("Ponto \""+name.trim()+"\" adicionado ao mapa.");
 }
 function startBlock(){
  blockMode=true;document.getElementById("btnBlock").textContent="Toque na rua...";
@@ -439,6 +513,9 @@ document.getElementById("btnPermission").onclick=startGPS;
 document.getElementById("btnSkipGps").onclick=enterWithoutGps;
 document.getElementById("btnLocate").onclick=()=>currentPosition?map.setView(currentPosition,19):startGPS();
 document.getElementById("btnRecord").onclick=toggleRecord;
+document.getElementById("btnMapRecord").onclick=toggleRecord;
+document.getElementById("btnMapPoint").onclick=addPoint;
+document.getElementById("btnMapBlock").onclick=startBlock;
 document.getElementById("btnPoint").onclick=addPoint;
 document.getElementById("btnBlock").onclick=startBlock;
 document.getElementById("btnRoute").onclick=route;
@@ -447,6 +524,7 @@ document.getElementById("btnExport").onclick=exportMap;
 document.getElementById("btnReset").onclick=()=>{if(confirm("Apagar as alterações deste aparelho e voltar ao teste inicial?")){localStorage.removeItem(STORAGE_KEY);location.reload()}};
 
 renderAll();
+updateRecordingUi();
 checkPermissionState();
 const all=[...SEED_TRACK,...SEED_POINTS.map(p=>[p.lat,p.lon])];
 if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setView([-1.5,-48.7],13);
