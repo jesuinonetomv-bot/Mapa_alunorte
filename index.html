@@ -40,7 +40,7 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
 </head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte</h1><small>Mapa vivo por localização</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.6</span></h1><small>Mapa vivo por localização</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -97,8 +97,11 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
   <div class="permission-box">
     <h2>Permitir localização</h2>
     <p>O mapa usa o GPS para mostrar sua posição, calcular rotas e aprender novos caminhos enquanto você se desloca.</p>
+    <div id="permissionStatus" class="status" style="margin-bottom:12px;text-align:left">
+      Toque no botão abaixo para liberar o GPS.
+    </div>
     <button id="btnPermission">Autorizar localização</button>
-    <p style="font-size:11px">O navegador exibirá a solicitação oficial de permissão.</p>
+    <p style="font-size:11px">O navegador exibirá a solicitação oficial de permissão. Se você já bloqueou antes, talvez seja necessário liberar a localização nas permissões do site.</p>
   </div>
 </div>
 
@@ -134,11 +137,79 @@ function setGps(text,on=false){
  document.getElementById("gpsHeader").innerHTML='<span class="dot '+(on?'on':'')+'"></span>GPS';
 }
 
-function startGPS(){
- if(!navigator.geolocation){alert("Seu navegador não oferece geolocalização.");return}
- setGps("Solicitando localização...");
- watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:1500,timeout:15000})
+function permissionMessage(text){
+ const el=document.getElementById("permissionStatus");
+ if(el) el.textContent=text;
 }
+
+async function checkPermissionState(){
+ if(!window.isSecureContext){
+   permissionMessage("Este site não está em conexão segura (HTTPS). O GPS só funciona em HTTPS.");
+   return;
+ }
+ if(!navigator.geolocation){
+   permissionMessage("Este navegador não oferece suporte à localização.");
+   return;
+ }
+ try{
+   if(navigator.permissions && navigator.permissions.query){
+     const result=await navigator.permissions.query({name:"geolocation"});
+     if(result.state==="denied"){
+       permissionMessage("A localização está bloqueada para este site. Abra as permissões do navegador e altere Localização para Permitir.");
+     }else if(result.state==="granted"){
+       permissionMessage("Localização já autorizada. Toque no botão para ativar o GPS.");
+     }else{
+       permissionMessage("Toque em Autorizar localização e depois escolha Permitir no aviso do navegador.");
+     }
+   }
+ }catch(e){
+   permissionMessage("Toque em Autorizar localização para solicitar acesso ao GPS.");
+ }
+}
+
+function startGPS(){
+ if(!window.isSecureContext){
+   permissionMessage("Erro: o GPS exige HTTPS.");
+   return;
+ }
+ if(!navigator.geolocation){
+   permissionMessage("Seu navegador não oferece geolocalização.");
+   return;
+ }
+
+ const btn=document.getElementById("btnPermission");
+ btn.disabled=true;
+ btn.textContent="Solicitando...";
+ permissionMessage("Aguardando resposta do navegador...");
+ setGps("Solicitando localização...");
+
+ // Primeiro pedido ocorre diretamente a partir do clique do usuário.
+ navigator.geolocation.getCurrentPosition(
+   p=>{
+     onPos(p);
+     permissionMessage("Localização autorizada.");
+     btn.disabled=false;
+     btn.textContent="Autorizar localização";
+     startWatch();
+   },
+   e=>{
+     onErr(e);
+     btn.disabled=false;
+     btn.textContent="Tentar novamente";
+   },
+   {enableHighAccuracy:true,maximumAge:0,timeout:20000}
+ );
+}
+
+function startWatch(){
+ if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+ watchId=navigator.geolocation.watchPosition(
+   onPos,
+   onWatchError,
+   {enableHighAccuracy:true,maximumAge:1500,timeout:20000}
+ );
+}
+
 function onPos(p){
  currentPosition=[p.coords.latitude,p.coords.longitude];
  const acc=Math.round(p.coords.accuracy||0);
@@ -154,9 +225,25 @@ function onPos(p){
  setGps("GPS ativo • precisão aproximada: "+acc+" m",true);
  if(recording) recordPoint(currentPosition,acc)
 }
+
+function gpsErrorText(e){
+ if(e.code===1) return "Permissão negada. Libere a Localização nas permissões deste site e tente novamente.";
+ if(e.code===2) return "O aparelho não conseguiu determinar sua localização. Verifique se o GPS está ligado.";
+ if(e.code===3) return "O GPS demorou demais para responder. Vá para uma área com melhor sinal e tente novamente.";
+ return "Não foi possível obter sua localização.";
+}
+
 function onErr(e){
- const msg=e.code===1?"Permissão de localização negada.":e.code===2?"Localização indisponível.":"Tempo esgotado ao obter localização.";
- setGps(msg);document.getElementById("permissionOverlay").style.display="flex"
+ const msg=gpsErrorText(e);
+ setGps(msg);
+ permissionMessage(msg);
+ document.getElementById("permissionOverlay").style.display="flex";
+}
+
+function onWatchError(e){
+ const msg=gpsErrorText(e);
+ setGps(msg);
+ // Não reabre a tela inteira por uma falha momentânea do GPS depois que o acesso já foi concedido.
 }
 function recordPoint(p,acc){
  if(acc>35)return;
@@ -295,6 +382,7 @@ document.getElementById("btnExport").onclick=exportMap;
 document.getElementById("btnReset").onclick=()=>{if(confirm("Apagar as alterações deste aparelho e voltar ao teste inicial?")){localStorage.removeItem(STORAGE_KEY);location.reload()}};
 
 renderAll();
+checkPermissionState();
 const all=[...SEED_TRACK,...SEED_POINTS.map(p=>[p.lat,p.lon])];
 if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setView([-1.5,-48.7],13);
 </script>
