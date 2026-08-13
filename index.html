@@ -146,6 +146,10 @@
       line-height: 1.5;
     }
 
+    .location-list { display:grid; gap:8px; max-height:220px; overflow:auto; }
+    .location-btn { width:100%; text-align:left; background:#2d3d49; color:white; border:1px solid var(--border); padding:9px 10px; border-radius:8px; font-size:12px; }
+    .location-type { color:var(--muted); font-size:10px; display:block; margin-top:2px; }
+
     .legend-item {
       display: flex;
       align-items: center;
@@ -218,6 +222,7 @@
         <div class="card">
           <div class="metric"><span>Pontos GPS</span><strong id="pointCount">87</strong></div>
           <div class="metric"><span>Distância</span><strong id="distance">1,50 km</strong></div>
+          <div class="metric"><span>Locais marcados</span><strong id="poiCount">10</strong></div>
           <div class="metric"><span>Status</span><strong id="routeStatus">Carregado</strong></div>
         </div>
       </div>
@@ -233,11 +238,20 @@
       </div>
 
       <div class="section">
+        <h2>Locais marcados</h2>
+        <div class="card">
+          <div id="locationList" class="location-list"></div>
+        </div>
+      </div>
+
+      <div class="section">
         <h2>Legenda</h2>
         <div class="card">
           <div class="legend-item"><span class="dot" style="background:#2b7fff"></span> Percurso GPS</div>
           <div class="legend-item"><span class="dot" style="background:#2ecc71"></span> Início</div>
           <div class="legend-item"><span class="dot" style="background:#e67e22"></span> Fim</div>
+          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Local / instalação</div>
+          <div class="legend-item"><span class="dot" style="background:#f1c40f"></span> Subestação</div>
           <div class="legend-item"><span class="dot" style="background:#b95946"></span> Via bloqueada</div>
         </div>
       </div>
@@ -245,14 +259,14 @@
       <div class="section">
         <h2>Próxima etapa</h2>
         <div class="card status">
-          Esta versão já lê arquivos GPX no navegador. Depois vamos acrescentar subestações, Sala de Automação, Ambulatório, vias bloqueadas e cálculo de rota.
+          Esta versão lê o percurso (trkpt) e também os locais marcados (wpt) do GPX. Os pontos aparecem no mapa com nome e categoria.
         </div>
       </div>
     </aside>
 
     <main style="position:relative;">
       <div class="topbar">
-        <div class="chip">Protótipo v0.1</div>
+        <div class="chip">Protótipo v0.2</div>
       </div>
       <div id="map"></div>
     </main>
@@ -354,6 +368,20 @@
       [-1.5431847,-48.7327859]
     ];
 
+    // Pontos de interesse (waypoints) do arquivo Primeiro_teste.gpx
+    const initialWaypoints = [
+      { lat:-1.5486357, lon:-48.7304949, name:'Chapeira' },
+      { lat:-1.5523812, lon:-48.7322256, name:'Entrada da Alunorte' },
+      { lat:-1.5431767, lon:-48.7327874, name:'Entrada sala dos TGs' },
+      { lat:-1.5467972, lon:-48.7324739, name:'Prédio da diretoria' },
+      { lat:-1.5484588, lon:-48.7309118, name:'Restaurante central' },
+      { lat:-1.5451082, lon:-48.7328795, name:'Subestação SE-02A-1' },
+      { lat:-1.5462975, lon:-48.7327696, name:'Subestação SE-14B-1' },
+      { lat:-1.5447580, lon:-48.7333851, name:'Subestação SE-56C-1 geradores' },
+      { lat:-1.5435816, lon:-48.7327834, name:'Subestação SSe-02C-1' },
+      { lat:-1.5489323, lon:-48.7304638, name:'Vestiário' }
+    ];
+
     const map = L.map('map', { zoomControl: true }).setView([-1.5485, -48.2320], 15);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -365,6 +393,8 @@
     let startMarker = null;
     let endMarker = null;
     let currentPoints = [];
+    let waypointLayer = L.layerGroup().addTo(map);
+    let currentWaypoints = [];
 
     function haversine(lat1, lon1, lat2, lon2) {
       const R = 6371000;
@@ -381,6 +411,60 @@
         total += haversine(points[i-1][0], points[i-1][1], points[i][0], points[i][1]);
       }
       return total;
+    }
+
+    function waypointCategory(name) {
+      const n = (name || '').toLowerCase();
+      if (n.includes('subestação') || n.includes('subestacao')) return 'Subestação';
+      if (n.includes('restaurante')) return 'Restaurante';
+      if (n.includes('entrada')) return 'Entrada';
+      if (n.includes('vestiário') || n.includes('vestiario')) return 'Vestiário';
+      if (n.includes('diretoria')) return 'Prédio';
+      if (n.includes('chapeira')) return 'Acesso';
+      return 'Local';
+    }
+
+    function renderWaypoints(waypoints, fit = false) {
+      waypointLayer.clearLayers();
+      currentWaypoints = waypoints || [];
+      const list = document.getElementById('locationList');
+      list.innerHTML = '';
+
+      currentWaypoints.forEach((wp, index) => {
+        const category = waypointCategory(wp.name);
+        const isSub = category === 'Subestação';
+        const marker = L.circleMarker([wp.lat, wp.lon], {
+          radius: isSub ? 9 : 8,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: isSub ? '#f1c40f' : '#8b5cf6',
+          fillOpacity: 1
+        }).bindPopup(`<strong>${escapeHtml(wp.name)}</strong><br><small>${category}</small>`);
+        marker.addTo(waypointLayer);
+        wp._marker = marker;
+
+        const btn = document.createElement('button');
+        btn.className = 'location-btn';
+        btn.innerHTML = `${escapeHtml(wp.name)}<span class="location-type">${category}</span>`;
+        btn.addEventListener('click', () => {
+          map.setView([wp.lat, wp.lon], Math.max(map.getZoom(), 18));
+          marker.openPopup();
+        });
+        list.appendChild(btn);
+      });
+
+      document.getElementById('poiCount').textContent = currentWaypoints.length;
+      if (!currentWaypoints.length) list.innerHTML = '<div class="status">Nenhum local marcado.</div>';
+
+      if (fit && currentWaypoints.length) {
+        const bounds = L.latLngBounds(currentWaypoints.map(w => [w.lat, w.lon]));
+        if (currentPoints.length) currentPoints.forEach(p => bounds.extend(p));
+        map.fitBounds(bounds, { padding:[30,30] });
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
     }
 
     function renderRoute(points, fit = true) {
@@ -438,14 +522,22 @@
       const parserError = xml.querySelector('parsererror');
       if (parserError) throw new Error('GPX inválido ou corrompido.');
 
-      const nodes = [...xml.getElementsByTagName('trkpt')];
-      const points = nodes.map(node => [
+      const trkNodes = [...xml.getElementsByTagName('trkpt')];
+      const points = trkNodes.map(node => [
         Number(node.getAttribute('lat')),
         Number(node.getAttribute('lon'))
       ]).filter(([lat, lon]) => Number.isFinite(lat) && Number.isFinite(lon));
 
-      if (!points.length) throw new Error('Nenhum ponto de trilha encontrado no GPX.');
-      return points;
+      const wptNodes = [...xml.getElementsByTagName('wpt')];
+      const waypoints = wptNodes.map((node, i) => {
+        const lat = Number(node.getAttribute('lat'));
+        const lon = Number(node.getAttribute('lon'));
+        const nameNode = [...node.children].find(c => c.localName === 'name');
+        return { lat, lon, name: nameNode?.textContent?.trim() || `Local ${i+1}` };
+      }).filter(wp => Number.isFinite(wp.lat) && Number.isFinite(wp.lon));
+
+      if (!points.length && !waypoints.length) throw new Error('Nenhuma trilha ou local marcado encontrado no GPX.');
+      return { points, waypoints };
     }
 
     document.getElementById('gpxFile').addEventListener('change', event => {
@@ -454,8 +546,10 @@
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const points = parseGPX(reader.result);
-          renderRoute(points, true);
+          const data = parseGPX(reader.result);
+          if (data.points.length) renderRoute(data.points, false);
+          else clearRoute(true);
+          renderWaypoints(data.waypoints, true);
         } catch (error) {
           alert(error.message);
         }
@@ -464,13 +558,17 @@
     });
 
     document.getElementById('fitBtn').addEventListener('click', () => {
-      if (routeLayer) map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+      const bounds = L.latLngBounds([]);
+      if (currentPoints.length) currentPoints.forEach(p => bounds.extend(p));
+      if (currentWaypoints.length) currentWaypoints.forEach(w => bounds.extend([w.lat, w.lon]));
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30] });
     });
 
-    document.getElementById('clearBtn').addEventListener('click', () => clearRoute(true));
+    document.getElementById('clearBtn').addEventListener('click', () => { clearRoute(true); renderWaypoints([], false); });
 
     // Exibe automaticamente o percurso de teste ao abrir o arquivo.
-    renderRoute(initialPoints, true);
+    renderRoute(initialPoints, false);
+    renderWaypoints(initialWaypoints, true);
   </script>
 </body>
 </html>
