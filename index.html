@@ -40,7 +40,7 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
 </head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.6</span></h1><small>Mapa vivo por localização</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.7</span></h1><small>Mapa vivo por localização</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -100,8 +100,11 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
     <div id="permissionStatus" class="status" style="margin-bottom:12px;text-align:left">
       Toque no botão abaixo para liberar o GPS.
     </div>
-    <button id="btnPermission">Autorizar localização</button>
-    <p style="font-size:11px">O navegador exibirá a solicitação oficial de permissão. Se você já bloqueou antes, talvez seja necessário liberar a localização nas permissões do site.</p>
+    <div class="row" style="justify-content:center">
+      <button id="btnPermission">Autorizar localização</button>
+      <button id="btnSkipGps" class="secondary">Entrar sem GPS</button>
+    </div>
+    <p style="font-size:11px">O mapa abre mesmo se o GPS demorar. A precisão será refinada em segundo plano.</p>
   </div>
 </div>
 
@@ -144,7 +147,7 @@ function permissionMessage(text){
 
 async function checkPermissionState(){
  if(!window.isSecureContext){
-   permissionMessage("Este site não está em conexão segura (HTTPS). O GPS só funciona em HTTPS.");
+   permissionMessage("Este site precisa de HTTPS para usar localização.");
    return;
  }
  if(!navigator.geolocation){
@@ -155,21 +158,19 @@ async function checkPermissionState(){
    if(navigator.permissions && navigator.permissions.query){
      const result=await navigator.permissions.query({name:"geolocation"});
      if(result.state==="denied"){
-       permissionMessage("A localização está bloqueada para este site. Abra as permissões do navegador e altere Localização para Permitir.");
+       permissionMessage("A localização está bloqueada. Libere a permissão do site no navegador.");
      }else if(result.state==="granted"){
-       permissionMessage("Localização já autorizada. Toque no botão para ativar o GPS.");
+       permissionMessage("Localização já autorizada. Toque para ativar o GPS.");
      }else{
-       permissionMessage("Toque em Autorizar localização e depois escolha Permitir no aviso do navegador.");
+       permissionMessage("Toque em Autorizar localização e escolha Permitir.");
      }
    }
- }catch(e){
-   permissionMessage("Toque em Autorizar localização para solicitar acesso ao GPS.");
- }
+ }catch(e){}
 }
 
 function startGPS(){
  if(!window.isSecureContext){
-   permissionMessage("Erro: o GPS exige HTTPS.");
+   permissionMessage("O GPS exige conexão HTTPS.");
    return;
  }
  if(!navigator.geolocation){
@@ -179,71 +180,134 @@ function startGPS(){
 
  const btn=document.getElementById("btnPermission");
  btn.disabled=true;
- btn.textContent="Solicitando...";
- permissionMessage("Aguardando resposta do navegador...");
- setGps("Solicitando localização...");
+ btn.textContent="Localizando...";
+ permissionMessage("Buscando uma posição rápida...");
 
- // Primeiro pedido ocorre diretamente a partir do clique do usuário.
+ // Primeiro tenta uma posição rápida e aceita cache recente.
  navigator.geolocation.getCurrentPosition(
    p=>{
-     onPos(p);
-     permissionMessage("Localização autorizada.");
+     acceptPosition(p, true);
      btn.disabled=false;
      btn.textContent="Autorizar localização";
      startWatch();
    },
    e=>{
-     onErr(e);
      btn.disabled=false;
      btn.textContent="Tentar novamente";
+
+     // Timeout não bloqueia mais o aplicativo.
+     if(e.code===3){
+       permissionMessage("O GPS está demorando. Você pode entrar no mapa e ele continuará tentando em segundo plano.");
+       document.getElementById("btnSkipGps").textContent="Entrar e continuar tentando";
+       startWatch();
+     }else{
+       onInitialGpsError(e);
+     }
    },
-   {enableHighAccuracy:true,maximumAge:0,timeout:20000}
+   {
+     enableHighAccuracy:false,
+     maximumAge:60000,
+     timeout:7000
+   }
  );
 }
 
 function startWatch(){
+ if(!navigator.geolocation) return;
  if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+
  watchId=navigator.geolocation.watchPosition(
-   onPos,
+   p=>acceptPosition(p, false),
    onWatchError,
-   {enableHighAccuracy:true,maximumAge:1500,timeout:20000}
+   {
+     enableHighAccuracy:true,
+     maximumAge:5000,
+     timeout:15000
+   }
  );
 }
 
-function onPos(p){
+function acceptPosition(p, centerNow){
  currentPosition=[p.coords.latitude,p.coords.longitude];
  const acc=Math.round(p.coords.accuracy||0);
+
+ // Guarda a última posição boa para a próxima abertura.
+ try{
+   localStorage.setItem("mapa_alunorte_last_position", JSON.stringify({
+     lat:currentPosition[0], lon:currentPosition[1],
+     accuracy:acc, time:Date.now()
+   }));
+ }catch(e){}
+
  if(!gpsMarker){
-   gpsMarker=L.circleMarker(currentPosition,{radius:8,weight:3,color:"#fff",fillColor:"#1976d2",fillOpacity:1}).addTo(map).bindPopup("Sua localização");
-   accuracyLayer=L.circle(currentPosition,{radius:acc,weight:1,fillOpacity:.06}).addTo(map);
-   map.setView(currentPosition,18)
+   gpsMarker=L.circleMarker(currentPosition,{
+     radius:8,weight:3,color:"#fff",fillColor:"#1976d2",fillOpacity:1
+   }).addTo(map).bindPopup("Sua localização");
+   accuracyLayer=L.circle(currentPosition,{
+     radius:acc,weight:1,fillOpacity:.06
+   }).addTo(map);
  }else{
-   gpsMarker.setLatLng(currentPosition);accuracyLayer.setLatLng(currentPosition).setRadius(acc)
+   gpsMarker.setLatLng(currentPosition);
+   accuracyLayer.setLatLng(currentPosition).setRadius(acc);
  }
+
+ if(centerNow || !map._gpsCenteredOnce){
+   map.setView(currentPosition,18);
+   map._gpsCenteredOnce=true;
+ }
+
  document.getElementById("permissionOverlay").style.display="none";
  document.getElementById("btnRecord").disabled=false;
- setGps("GPS ativo • precisão aproximada: "+acc+" m",true);
- if(recording) recordPoint(currentPosition,acc)
+
+ const quality = acc<=15 ? "excelente" : acc<=35 ? "boa" : acc<=80 ? "aproximada" : "baixa";
+ setGps("GPS ativo • precisão "+quality+": ±"+acc+" m",true);
+
+ // Só grava rua quando a precisão estiver aceitável.
+ if(recording && acc<=35) recordPoint(currentPosition,acc);
 }
 
-function gpsErrorText(e){
- if(e.code===1) return "Permissão negada. Libere a Localização nas permissões deste site e tente novamente.";
- if(e.code===2) return "O aparelho não conseguiu determinar sua localização. Verifique se o GPS está ligado.";
- if(e.code===3) return "O GPS demorou demais para responder. Vá para uma área com melhor sinal e tente novamente.";
- return "Não foi possível obter sua localização.";
-}
-
-function onErr(e){
+function onInitialGpsError(e){
  const msg=gpsErrorText(e);
  setGps(msg);
  permissionMessage(msg);
- document.getElementById("permissionOverlay").style.display="flex";
+}
+
+function gpsErrorText(e){
+ if(e.code===1) return "Permissão negada. Libere a Localização nas permissões deste site.";
+ if(e.code===2) return "Não foi possível obter a posição agora. Verifique se o GPS do aparelho está ligado.";
+ if(e.code===3) return "O GPS está demorando para responder.";
+ return "Não foi possível obter sua localização.";
 }
 
 function onWatchError(e){
  const msg=gpsErrorText(e);
  setGps(msg);
- // Não reabre a tela inteira por uma falha momentânea do GPS depois que o acesso já foi concedido.
+ // O mapa continua utilizável. Não reabre a janela de autorização.
+}
+
+function enterWithoutGps(){
+ document.getElementById("permissionOverlay").style.display="none";
+
+ // Se houver uma posição recente salva, mostra como referência até chegar GPS novo.
+ try{
+   const raw=localStorage.getItem("mapa_alunorte_last_position");
+   if(raw){
+     const last=JSON.parse(raw);
+     const age=Date.now()-last.time;
+     if(age < 24*60*60*1000){
+       const p=[last.lat,last.lon];
+       if(!gpsMarker){
+         gpsMarker=L.circleMarker(p,{
+           radius:8,weight:3,color:"#fff",fillColor:"#768692",fillOpacity:.9
+         }).addTo(map).bindPopup("Última posição conhecida");
+       }
+       map.setView(p,18);
+     }
+   }
+ }catch(e){}
+
+ setGps("Mapa aberto. Aguardando GPS em segundo plano...");
+ startWatch();
 }
 function recordPoint(p,acc){
  if(acc>35)return;
@@ -372,6 +436,7 @@ function exportMap(){
 }
 
 document.getElementById("btnPermission").onclick=startGPS;
+document.getElementById("btnSkipGps").onclick=enterWithoutGps;
 document.getElementById("btnLocate").onclick=()=>currentPosition?map.setView(currentPosition,19):startGPS();
 document.getElementById("btnRecord").onclick=toggleRecord;
 document.getElementById("btnPoint").onclick=addPoint;
