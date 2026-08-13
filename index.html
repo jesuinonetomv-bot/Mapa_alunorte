@@ -63,7 +63,7 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
 </head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.9 Firebase</span></h1><small>Mapa vivo por localização</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.10 Firebase</span></h1><small>Mapa vivo por localização</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -102,7 +102,7 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
       <button id="btnPoint">Adicionar ponto</button>
       <button id="btnBlock" class="danger">Adicionar bloqueio</button>
     </div>
-    <p style="font-size:12px;color:#6c7780">Ponto usa sua posição atual. Para bloquear, toque primeiro no botão e depois no trecho da rua.</p>
+    <p style="font-size:12px;color:#6c7780">Ponto usa sua posição atual. Para bloquear, toque no botão e depois na rua. Para retirar um bloqueio, toque nele na lista “Bloqueios”.</p>
   </div>
 
   <div class="card"><h2>Locais</h2><div id="pointsList" class="list"></div></div>
@@ -488,14 +488,44 @@ function renderPoints(){
  if([...sel.options].some(o=>o.value===old))sel.value=old
 }
 function renderBlocks(){
- const list=document.getElementById("blocksList");list.innerHTML="";
- if(!state.blockedEdges.length){list.innerHTML='<div style="font-size:12px;color:#6c7780">Nenhum bloqueio ativo.</div>';return}
- state.blockedEdges.forEach(b=>{
-   const d=document.createElement("div");d.className="item";
-   d.innerHTML="<b>Via bloqueada</b><br><span style='font-size:11px'>"+new Date(b.createdAt).toLocaleString()+"</span>";
-   d.onclick=()=>{if(confirm("Remover este bloqueio?")){state.blockedEdges=state.blockedEdges.filter(x=>x.id!==b.id);save()}};
-   list.appendChild(d)
- })
+ const list=document.getElementById("blocksList");
+ list.innerHTML="";
+
+ if(!state.blockedEdges.length){
+   list.innerHTML='<div style="font-size:12px;color:#6c7780">Nenhum bloqueio ativo.</div>';
+   return;
+ }
+
+ state.blockedEdges.forEach((b,index)=>{
+   const d=document.createElement("div");
+   d.className="item";
+   d.innerHTML=
+     "<b>⛔ Via bloqueada</b>"+
+     "<span class='badge'>Toque para remover</span><br>"+
+     "<span style='font-size:11px'>"+
+     (b.createdAt ? new Date(b.createdAt).toLocaleString() : "Bloqueio ativo")+
+     "</span>";
+
+   d.onclick=async ()=>{
+     if(!confirm("Deseja retirar este bloqueio da via?")) return;
+
+     try{
+       if(b.firebaseId && firebaseReady()){
+         await removeBlockFromFirebase(b);
+         document.getElementById("firebaseStatus").textContent=
+           "Bloqueio removido • mapa atualizado para todos";
+       }else{
+         state.blockedEdges=state.blockedEdges.filter((x,i)=>i!==index);
+         save();
+       }
+     }catch(e){
+       console.error(e);
+       alert("Não foi possível retirar o bloqueio agora. Tente novamente.");
+     }
+   };
+
+   list.appendChild(d);
+ });
 }
 function renderAll(){
  renderRoads();renderPoints();renderBlocks();
@@ -601,6 +631,13 @@ async function uploadBlockToFirebase(ti,pi){
    uid:f.uid,
    createdAt:new Date().toISOString()
  });
+ return true;
+}
+
+async function removeBlockFromFirebase(block){
+ if(!firebaseReady() || !block || !block.firebaseId) return false;
+ const f=window.fbMap;
+ await f.remove(f.ref(f.db,"mapa/bloqueios/"+block.firebaseId));
  return true;
 }
 
