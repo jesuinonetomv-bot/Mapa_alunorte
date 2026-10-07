@@ -74,11 +74,27 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
 }
 
 @media(max-width:800px){#app{grid-template-columns:1fr;grid-template-rows:auto 1fr}aside{max-height:47vh;border-right:0;border-bottom:1px solid #dfe4e7}#map{min-height:53vh}}
+
+/* Navigation-first layout */
+:root{--accent:#009fca;--dark:#173a4a;--danger:#ed615b;--route:#00a9ed}
+header{background:white;color:#173a4a;height:60px;box-shadow:0 2px 12px #173a4a18;z-index:1200}
+header h1{font-size:19px}header small{color:#69808a}
+#app{position:relative;display:block}#mapWrap,#map{height:100%;min-height:0}
+aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32px);z-index:1050;border:0;border-radius:24px;padding:12px;background:#ffffffed;box-shadow:0 8px 32px #173a4a25}
+.card{border:0;box-shadow:none;background:#f3f8fa;border-radius:18px;margin-bottom:10px}
+.card h2{color:#173a4a}button{border-radius:16px;min-height:44px}button.secondary{background:#e0f2f8;color:#17627b}button.dark{background:#34596a}
+.map-actions{left:auto;right:16px;bottom:20px;transform:none;width:auto;flex-direction:column;align-items:flex-end}.map-actions button{border:0;border-radius:22px}
+.status{background:#e7f3f7;color:#34596a}#routeInfo{font-size:15px}
+#panelToggle{position:absolute;z-index:1100;top:14px;left:14px;background:white;color:#173a4a;box-shadow:0 4px 16px #173a4a25;border-radius:24px;padding:12px 20px;display:none}
+#searchDest{margin-bottom:8px;border-radius:16px}#navBanner{position:absolute;z-index:1000;top:14px;left:50%;transform:translateX(-50%);background:#173a4a;color:white;border-radius:20px;padding:14px 20px;box-shadow:0 4px 18px #173a4a30;display:none;max-width:80%;text-align:center}
+.leaflet-control-zoom{border:0!important;border-radius:16px!important;overflow:hidden}.leaflet-control-attribution{font-size:9px}
+@media(max-width:800px){header{height:56px;padding:8px 12px}header small{font-size:11px}#app{display:block}#map,#mapWrap{height:100%;min-height:0}aside{left:10px;right:10px;bottom:12px;top:auto;width:auto;max-height:45vh;border:0;transition:transform .2s}aside.folded{transform:translateY(calc(100% + 20px))}#panelToggle{display:block}.map-actions{bottom:calc(45vh + 30px);right:10px;gap:6px}.map-actions button{font-size:12px;padding:9px 12px;min-height:40px}#navBanner{top:72px;width:calc(100% - 28px);max-width:none;font-size:14px}.block-editor{bottom:48vh}.recording-pill{top:70px}.leaflet-top.leaflet-left{left:auto;right:10px;top:10px}}
+
 </style>
 </head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.11 Firebase</span></h1><small>Mapa vivo por localização</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.12 Navegação</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -103,6 +119,7 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
 
   <div class="card">
     <h2>Navegação</h2>
+    <input id="searchDest" type="search" placeholder="Para onde vamos?" aria-label="Buscar destino">
     <select id="dest"><option value="">Escolha o destino</option></select>
     <div class="row" style="margin-top:10px">
       <button id="btnRoute">Calcular rota</button>
@@ -129,11 +146,11 @@ select,input{width:100%;padding:10px;border:1px solid #cbd3d8;border-radius:9px;
       <button id="btnExport" class="secondary">Exportar mapa</button>
       <button id="btnReset" class="dark">Restaurar teste</button>
     </div>
-    <p style="font-size:11px;color:#6c7780">Nesta versão os novos dados ficam salvos neste aparelho. O próximo passo é sincronizar todos os usuários em um banco online.</p>
+    <p style="font-size:11px;color:#6c7780">Percursos, locais e bloqueios são compartilhados pelo Firebase. Exporte uma cópia para guardar os dados.</p>
   </div>
 </aside>
 <div id="mapWrap">
-  <div id="map"></div>
+  <div id="map"></div><button id="panelToggle">⌕ Destinos e mapa</button><div id="navBanner" role="status"></div>
   <div id="recordingPill" class="recording-pill"><span class="rec-dot"></span>Gravando novo percurso</div>
   <div id="blockEditor" class="block-editor">
     <b>Definir extensão do bloqueio</b>
@@ -223,7 +240,8 @@ const SEED_TRACK = [[-1.5528436, -48.7322755], [-1.5522112, -48.7321207], [-1.55
 const SEED_POINTS = [{"id": "seed-0", "name": "Chapeira", "category": "Local", "lat": -1.5486357, "lon": -48.7304949}, {"id": "seed-1", "name": "Entrada da Alunorte", "category": "Local", "lat": -1.5523812, "lon": -48.7322256}, {"id": "seed-2", "name": "Entrada sala dos TGs", "category": "Local", "lat": -1.5431767, "lon": -48.7327874}, {"id": "seed-3", "name": "Prédio da diretoria", "category": "Local", "lat": -1.5467972, "lon": -48.7324739}, {"id": "seed-4", "name": "Restaurante central", "category": "Local", "lat": -1.5484588, "lon": -48.7309118}, {"id": "seed-5", "name": "Subestação SE-02A-1", "category": "Subestação", "lat": -1.5451082, "lon": -48.7328795}, {"id": "seed-6", "name": "Subestação SE-14B-1", "category": "Subestação", "lat": -1.5462975, "lon": -48.7327696}, {"id": "seed-7", "name": "Subestação SE-56C-1 geradores", "category": "Subestação", "lat": -1.544758, "lon": -48.7333851}, {"id": "seed-8", "name": "Subestação SSe-02C-1", "category": "Subestação", "lat": -1.5435816, "lon": -48.7327834}, {"id": "seed-9", "name": "Vestiário", "category": "Local", "lat": -1.5489323, "lon": -48.7304638}];
 const STORAGE_KEY = "mapa_alunorte_v05";
 
-const map=L.map("map");
+const map=L.map("map",{zoomControl:false});
+L.control.zoom({position:"topright"}).addTo(map);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap"}).addTo(map);
 
 let state=loadState(), currentPosition=null, gpsMarker=null, accuracyLayer=null;
@@ -375,6 +393,7 @@ function acceptPosition(p, centerNow){
 
  // Só grava rua quando a precisão estiver aceitável.
  if(recording && acc<=35) recordPoint(currentPosition,acc);
+ if(navigationActive && acc<=35 && Date.now()-lastRouteUpdate>5000)route(true);
 }
 
 function onInitialGpsError(e){
@@ -888,21 +907,30 @@ async function confirmBlockRange(){
 
 
 function key(ti,pi){return ti+","+pi}
+function project(p,a,b){
+ const c=Math.cos(a[0]*Math.PI/180),x=(b[1]-a[1])*c,y=b[0]-a[0];
+ const t=Math.max(0,Math.min(1,((p[1]-a[1])*c*x+(p[0]-a[0])*y)/(x*x+y*y||1)));
+ const q=[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])];return {t,p:q,d:hav(p,q)};
+}
 function graph(){
- const g=new Map();
+ const g=new Map(),segments=[],joins=[];
  const add=(k,p)=>{if(!g.has(k))g.set(k,{p,edges:[]})};
- const link=(a,b,w)=>{g.get(a).edges.push({to:b,w});g.get(b).edges.push({to:a,w})};
- state.traces.forEach((t,ti)=>{
-   t.forEach((p,pi)=>add(key(ti,pi),p));
-   for(let i=0;i<t.length-1;i++)if(!blocked(ti,i))link(key(ti,i),key(ti,i+1),hav(t[i],t[i+1]))
- });
- const nodes=[...g.entries()];
- for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
-   const [ka,na]=nodes[i],[kb,nb]=nodes[j];
-   if(ka.split(",")[0]===kb.split(",")[0])continue;
-   const d=hav(na.p,nb.p);if(d<=12)link(ka,kb,d)
+ const link=(a,b)=>{if(a===b)return;const w=hav(g.get(a).p,g.get(b).p);g.get(a).edges.push({to:b,w});g.get(b).edges.push({to:a,w})};
+ state.traces.forEach((t,ti)=>{t.forEach((p,pi)=>add(key(ti,pi),p));for(let pi=0;pi<t.length-1;pi++)segments.push({ti,pi,a:t[pi],b:t[pi+1],blocked:blocked(ti,pi),cuts:[{t:0,k:key(ti,pi)},{t:1,k:key(ti,pi+1)}]})});
+ const cut=(seg,t,p)=>{const old=seg.cuts.find(x=>Math.abs(x.t-t)<1e-8);if(old)return old.k;const k='s'+seg.ti+':'+seg.pi+':'+seg.cuts.length;add(k,p);seg.cuts.push({t,k});return k};
+ for(let i=0;i<segments.length;i++)for(let j=i+1;j<segments.length;j++){
+  const a=segments[i],b=segments[j];if(a.blocked||b.blocked)continue;if(a.ti===b.ti&&Math.abs(a.pi-b.pi)<=1)continue;
+  // Exact intersections split both roads, including crossings within one recording.
+  const ax=a.b[1]-a.a[1],ay=a.b[0]-a.a[0],bx=b.b[1]-b.a[1],by=b.b[0]-b.a[0],den=ax*by-ay*bx;
+  if(Math.abs(den)>1e-16){const dx=b.a[1]-a.a[1],dy=b.a[0]-a.a[0],t=(dx*by-dy*bx)/den,u=(dx*ay-dy*ax)/den;if(t>=0&&t<=1&&u>=0&&u<=1){const p=[a.a[0]+t*ay,a.a[1]+t*ax];joins.push([cut(a,t,p),cut(b,u,p)]);continue}}
+  // Join recording endpoints to road interiors only within 8 metres.
+  for(const [src,dst] of [[a,b],[b,a]])for(const [pt,idx,t] of [[src.a,src.pi,0],[src.b,src.pi+1,1]]){if(idx!==0&&idx!==state.traces[src.ti].length-1)continue;const q=project(pt,dst.a,dst.b);if(q.d<=8)joins.push([cut(src,t,pt),cut(dst,q.t,q.p)])}
  }
- return g
+ segments.forEach(seg=>{if(seg.blocked)return;seg.cuts.sort((a,b)=>a.t-b.t);for(let i=1;i<seg.cuts.length;i++)link(seg.cuts[i-1].k,seg.cuts[i].k)});
+ joins.forEach(([a,b])=>link(a,b));
+ // Origin and destination snap to the interior of an open segment.
+ g.snap=p=>{let best=null;for(const seg of segments){if(seg.blocked)continue;const q=project(p,seg.a,seg.b);if(!best||q.d<best.d)best={...q,seg}}if(!best)return null;const k=cut(best.seg,best.t,best.p);best.seg.cuts.forEach(c=>{if(c.k!==k)link(k,c.k)});return {k,p:best.p,d:best.d}};
+ return g;
 }
 function nearest(g,p){
  let best=null;for(const [k,n] of g){const d=hav(p,n.p);if(!best||d<best.d)best={k,p:n.p,d}}return best
@@ -918,19 +946,24 @@ function dijkstra(g,start,goal){
  const path=[];let c=goal;while(c!==undefined){path.push(c);if(c===start)break;c=prev.get(c)}path.reverse();
  return {path,distance:dist.get(goal)}
 }
-function route(){
+let navigationActive=false,lastRouteUpdate=0;
+function route(auto=false){
+ if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("navBanner").style.display="none";lastRouteUpdate=Date.now();
  if(!currentPosition){alert("A localização ainda não está disponível.");return}
  const id=document.getElementById("dest").value,dest=state.points.find(p=>p.id===id);if(!dest){alert("Escolha um destino.");return}
- const g=graph(),a=nearest(g,currentPosition),b=nearest(g,[dest.lat,dest.lon]);
+ const g=graph(),a=g.snap(currentPosition),b=g.snap([dest.lat,dest.lon]);
  if(!a||!b){document.getElementById("routeInfo").textContent="Ainda não há ruas suficientes.";return}
+ if(a.d>60||b.d>60){document.getElementById("routeInfo").textContent="Origem ou destino está a mais de 60 m de uma via cadastrada. Grave o acesso antes de navegar.";return}
  const r=dijkstra(g,a.k,b.k);if(!r){document.getElementById("routeInfo").textContent="Não existe rota disponível. Pode haver bloqueios ou falta de ruas mapeadas.";return}
  const coords=[currentPosition,a.p,...r.path.map(k=>g.get(k).p),b.p,[dest.lat,dest.lon]];
  if(routeLayer)map.removeLayer(routeLayer);
- routeLayer=L.polyline(coords,{color:"#1976d2",weight:7,opacity:.9}).addTo(map);map.fitBounds(routeLayer.getBounds(),{padding:[30,30]});
- const total=r.distance+a.d+b.d+hav(b.p,[dest.lat,dest.lon]);
- document.getElementById("routeInfo").innerHTML="<b>"+esc(dest.name)+"</b><br>Distância aproximada: "+distText(total)
+ routeLayer=L.polyline(coords,{color:"#00a9ed",weight:8,opacity:.95}).addTo(map);if(!auto)map.fitBounds(routeLayer.getBounds(),{padding:[45,45]});
+ navigationActive=true;lastRouteUpdate=Date.now();
+ const total=r.distance+a.d+b.d;
+ const banner=document.getElementById("navBanner");banner.style.display="block";banner.textContent="➤ "+dest.name+" • "+distText(total);
+ document.getElementById("routeInfo").innerHTML="<b>"+esc(dest.name)+"</b><br>Distância aproximada: "+distText(total)+"<br>Acessos fora da via: "+distText(a.d+b.d)
 }
-function clearRoute(){if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("routeInfo").textContent="Escolha um destino."}
+function clearRoute(){navigationActive=false;document.getElementById("navBanner").style.display="none";if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("routeInfo").textContent="Escolha um destino."}
 function exportMap(){
  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");
  a.href=URL.createObjectURL(blob);a.download="mapa-alunorte-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href)
@@ -947,11 +980,13 @@ document.getElementById("btnConfirmBlock").onclick=confirmBlockRange;
 document.getElementById("btnCancelBlock").onclick=clearBlockEditor;
 document.getElementById("btnPoint").onclick=addPoint;
 document.getElementById("btnBlock").onclick=startBlock;
-document.getElementById("btnRoute").onclick=route;
+document.getElementById("btnRoute").onclick=()=>route();
 document.getElementById("btnClear").onclick=clearRoute;
 document.getElementById("btnExport").onclick=exportMap;
 document.getElementById("btnReset").onclick=()=>{if(confirm("Apagar as alterações deste aparelho e voltar ao teste inicial?")){localStorage.removeItem(STORAGE_KEY);location.reload()}};
 
+document.getElementById("panelToggle").onclick=()=>{document.querySelector("aside").classList.toggle("folded");setTimeout(()=>map.invalidateSize(),220)};
+document.getElementById("searchDest").oninput=e=>{const q=e.target.value.toLocaleLowerCase();for(const o of document.getElementById("dest").options)o.hidden=!!o.value&&!o.textContent.toLocaleLowerCase().includes(q);for(const el of document.querySelectorAll("#pointsList .item"))el.style.display=el.textContent.toLocaleLowerCase().includes(q)?"":"none"};
 renderAll();
 updateRecordingUi();
 checkPermissionState();
@@ -961,3 +996,4 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
