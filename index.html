@@ -108,7 +108,7 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
 </style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.22 Locais na navegação</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.23 Ícones e vias contínuas</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -567,9 +567,8 @@ function renderRoads(){
    }
  })
 }
-function markerIcon(cat){
- const sub=(cat||"").toLowerCase().includes("sub");
- return L.divIcon({className:"",html:'<div style="width:24px;height:24px;border-radius:50%;background:'+(sub?"#4a3041":"#43807a")+';border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)"></div>',iconSize:[24,24],iconAnchor:[12,12]})
+function markerIcon(cat,name=''){
+ return L.divIcon({className:'',html:'<div class="navigation-place"><span class="navigation-place-icon">'+navigationPlaceIcon(cat,name)+'</span></div>',iconSize:[27,27],iconAnchor:[13,13]})
 }
 function renderPoints(){
  pointLayers.forEach(x=>map.removeLayer(x));pointLayers=[];
@@ -577,7 +576,7 @@ function renderPoints(){
  const sel=document.getElementById("dest"), old=sel.value;sel.innerHTML='<option value="">Escolha o destino</option><option value="gps">Minha localização (GPS)</option>';
  const list=document.getElementById("pointsList");list.innerHTML="";
  state.points.forEach(p=>{
-   const m=L.marker([p.lat,p.lon],{pane:"locationsPane",icon:markerIcon(p.category)}).addTo(map).bindPopup("<b>"+esc(p.name)+"</b><br>"+esc(p.category||"Local"));
+   const m=L.marker([p.lat,p.lon],{pane:"locationsPane",icon:markerIcon(p.category,p.name)}).addTo(map).bindPopup("<b>"+esc(p.name)+"</b><br>"+esc(p.category||"Local"));
    pointLayers.push(m);
    const o=document.createElement("option");o.value=p.id;o.textContent=p.name;sel.appendChild(o);origin.appendChild(o.cloneNode(true));
    const d=document.createElement("div");d.className="item";d.innerHTML="<b>"+esc(p.name)+"</b><span class='badge'>"+esc(p.category||"Local")+"</span>";
@@ -1130,18 +1129,22 @@ function selectStudio(id){if(!canDraw()||studio.tool!=='select')return;studio.se
 function renderStudio(){
  map.getPane("drawnPane").style.display=showDrawn?"":"none";
  studio.layers.forEach(l=>map.removeLayer(l));studio.layers=[];studio.handles.forEach(l=>map.removeLayer(l));studio.handles=[];syncStudioGeometry();
+ const surfaces=[],closures=[];
  for(const [id,r] of Object.entries(studio.roads)){const coords=studioGeometry(r);if(coords.length<2)continue;
  const selected=id===studio.selected;
- const outline=L.polyline(coords,{pane:"drawnPane",color:selected?'#efaa36':'#647d8a',weight:(r.width||9)+4,opacity:1}).addTo(map);studio.layers.push(outline);
- const inner=L.polyline(coords,{pane:'drawnPane',color:'#fff',weight:r.width||9,opacity:1}).addTo(map);studio.layers.push(inner);
+ const outline=L.polyline(coords,{pane:"drawnPane",color:selected?'#efaa36':'#647d8a',weight:(r.width||9)+4,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(map);studio.layers.push(outline);
+ const inner=L.polyline(coords,{pane:'drawnPane',color:'#fff',weight:r.width||9,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(map);studio.layers.push(inner);surfaces.push(inner);
  for(const l of [outline,inner])l.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(studio.tool!=='select')handleStudioClick(e);else if(blockMode){const ti=state.recordedCount+state.drawnRoadIds.indexOf(id),q=nearestRoadNode(e.latlng,ti);if(q)beginBlockRange(ti,Math.min(q.pi,coords.length-2))}else selectStudio(id)});
  // Blocked portions stay visible on official streets.
- const ti=state.recordedCount+state.drawnRoadIds.indexOf(id);for(let i=0;i<coords.length-1;i++)if(blocked(ti,i))studio.layers.push(L.polyline([coords[i],coords[i+1]],{pane:'drawnPane',color:'#ed615b',weight:9,dashArray:'8 7'}).addTo(map));
+ const ti=state.recordedCount+state.drawnRoadIds.indexOf(id);for(let i=0;i<coords.length-1;i++)if(blocked(ti,i))closures.push(L.polyline([coords[i],coords[i+1]],{pane:'drawnPane',color:'#ed615b',weight:9,dashArray:'8 7'}).addTo(map));
  if(showDrawn&&selected&&editor.authorized&&studio.tool==='select'&&!editor.active&&!studio.saving){
  r.controls.forEach((p,i)=>{const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',html:'<div class="studio-node" style="'+(studio.node===i?'background:#efaa36':'')+'"></div>',iconSize:[15,15],iconAnchor:[7,7]})}).addTo(map);m.on('click',()=>{studio.node=i;studioStatus('Ponto '+(i+1)+' selecionado. Você pode remover esse ponto.')});m.on('dragstart',checkpoint);m.on('dragend',()=>{const p=m.getLatLng(),pos=[p.lat,p.lng];r.controls[i]=(i===0||i===r.controls.length-1)?studioSnap(pos,id):pos;studio.node=i;renderStudio()});studio.handles.push(m)});
  const center=r.controls.reduce((a,p)=>[a[0]+p[0]/r.controls.length,a[1]+p[1]/r.controls.length],[0,0]);const move=L.marker(center,{draggable:true,icon:L.divIcon({className:'',html:'<div class="studio-move">↔</div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);move.on('dragstart',checkpoint);move.on('dragend',()=>{const p=move.getLatLng(),delta=[p.lat-center[0],p.lng-center[1]];r.controls=r.controls.map(x=>[x[0]+delta[0],x[1]+delta[1]]);renderStudio()});studio.handles.push(move);
  }
  }
+ // Draw every road border below every surface, so junctions form one continuous street.
+ surfaces.forEach(l=>l.bringToFront());
+ closures.forEach(l=>{l.bringToFront();studio.layers.push(l)});
  if(studio.points.length){const preview={controls:studio.points,type:studio.tool};studio.layers.push(L.polyline(studioGeometry(preview),{color:'#00a9ed',weight:4,dashArray:'5 5',interactive:false}).addTo(map));studio.points.forEach(p=>studio.layers.push(L.circleMarker(p,{radius:4,color:'#00a9ed',interactive:false}).addTo(map)))}
  document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===studio.tool));
  const selected=studio.roads[studio.selected];document.getElementById('studioName').value=selected?selected.name:'';if(selected)document.getElementById('studioWidth').value=selected.width||9;
@@ -1321,7 +1324,7 @@ function renderRoadView(){
 function requestPerspective(){if(cleanNav.view==='top'||cleanNav.frame)return;cleanNav.frame=requestAnimationFrame(()=>{cleanNav.frame=null;renderRoadView()})}
 function drawPerspective(){renderRoadView()}
 
-function navigationPlaceIcon(category){const text=(category||'').toLocaleLowerCase();if(text.includes('subesta'))return '⚡';if(text.includes('ambul')||text.includes('medic'))return '✚';if(text.includes('refeit')||text.includes('restaur'))return '🍴';if(text.includes('remot')||text.includes('controle'))return '▣';return '●'}
+function navigationPlaceIcon(category,name=''){const text=((category||'')+' '+name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase();if(text.includes('ambul')||text.includes('medic'))return '✚';if(text.includes('subesta'))return '⚡';if(text.includes('refeit')||text.includes('restaur'))return '🍴';if(text.includes('remot')||text.includes('controle'))return '▣';return '●'}
 function syncNavigationPlaces(){
  if(!roadView.ready)return;const m=roadView.map;
  if(!showLocations){for(const marker of roadView.places.values())marker.getElement().style.display='none';return}
@@ -1332,7 +1335,7 @@ function syncNavigationPlaces(){
  el.onclick=e=>{e.stopPropagation();open()};el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
  marker=new maplibregl.Marker({element:el,anchor:'center',pitchAlignment:'viewport',rotationAlignment:'viewport'}).setLngLat([p.lon,p.lat]).addTo(m);roadView.places.set(p.id,marker);
  }
- marker.setLngLat([p.lon,p.lat]);const el=marker.getElement();el.setAttribute('aria-label',p.name);el.title=p.name;el.querySelector('.navigation-place-icon').textContent=navigationPlaceIcon(p.category);el.querySelector('.navigation-place-label').textContent=p.name;el.style.display='';
+ marker.setLngLat([p.lon,p.lat]);const el=marker.getElement();el.setAttribute('aria-label',p.name);el.title=p.name;el.querySelector('.navigation-place-icon').textContent=navigationPlaceIcon(p.category,p.name);el.querySelector('.navigation-place-label').textContent=p.name;el.style.display='';
  }
  for(const [id,marker] of roadView.places)if(!ids.has(id)){marker.remove();roadView.places.delete(id)}
  layoutNavigationPlaceLabels();
@@ -1373,6 +1376,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 
