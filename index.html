@@ -108,25 +108,14 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
 </style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.23 Ícones e vias contínuas</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.24 Menu simplificado</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
 <aside class="clean-drawer" hidden><div class="sheet-heading"><b>Menu do mapa</b><button id="closeMenu" aria-label="Fechar menu">×</button></div>
   <div class="card"><h2>Administração</h2><button id="btnAdmin">Entrar como administrador</button>
   <div id="adminLogin" hidden style="margin-top:10px"><form id="adminForm"><input id="adminEmail" type="email" autocomplete="username" placeholder="E-mail do administrador" required><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Senha" required style="margin-top:8px"><button style="margin-top:8px">Entrar</button></form></div>
-  <div id="adminStatus" role="status" style="font-size:12px;margin-top:8px"></div><button id="adminLogout" class="dark" hidden style="margin-top:8px">Sair da conta</button><details style="font-size:12px;margin-top:10px"><summary>Configurar o primeiro administrador</summary><ol><li>No Firebase do projeto mapa-alunorte, ative Authentication → método E-mail/senha e crie sua conta.</li><li>Copie o UID da conta e, no Realtime Database, adicione administradores/SEU_UID com valor booleano true.</li><li>Antes de usar o editor, aplique as regras abaixo na aba Regras do banco. Elas mantêm a colaboração de percursos, pontos e bloqueios e reservam as revisões ao administrador. Se já houver outras regras ou caminhos, faça a integração antes de publicar.</li></ol><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{
- "rules": {
-  "administradores": { "$uid": { ".read": "auth != null &amp;&amp; auth.uid === $uid", ".write": false } },
-  "mapa": {
-   ".read": true,
-   "ruas": { ".write": "auth != null" },
-   "pontos": { ".write": "auth != null" },
-   "bloqueios": { ".write": "auth != null" },
-   "refinamentos": { ".write": "auth != null &amp;&amp; root.child('administradores').child(auth.uid).val() === true" }
-  }
- }
-}</pre><p>Não mantenha uma permissão de escrita pública na raiz ou em mapa: ela anula a proteção das revisões. O botão de administrador sozinho não protege o banco.</p></details>
+  <div id="adminStatus" role="status" style="font-size:12px;margin-top:8px"></div><button id="adminLogout" class="dark" hidden style="margin-top:8px">Sair da conta</button>
   <div id="adminTools" hidden><div id="studioPanel"><b>Desenhar ruas</b><p class="studio-hint">Desenhe sobre os percursos gravados. Linhas: 2 cliques. Polilinha: vários cliques e Concluir. Curva: início, ponto de controle e fim. Os marcadores podem ser arrastados depois.</p>
 <div class="draw-toolbar" id="studioTools"><button data-tool="select">↖ Selecionar</button><button data-tool="line">╱ Linha</button><button data-tool="polyline">⌁ Polilinha</button><button data-tool="curve">⌒ Curva</button><button data-tool="freehand">✎ Mão livre</button></div>
 <div class="draw-toolbar"><button id="studioFinish">Concluir desenho</button><button id="studioUndo">↶ Desfazer</button><button id="studioRedo">↷ Refazer</button><button id="studioDuplicate">Duplicar</button><button id="studioDelete" class="danger">Excluir rua</button></div>
@@ -172,7 +161,7 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
     <p style="font-size:12px;color:#6c7780">Ponto usa sua posição atual. Para bloquear, toque no botão, toque na rua e arraste INÍCIO/FIM para definir a extensão. Para retirar, toque no bloqueio na lista.</p>
   </div>
 
-  <div class="card"><h2>Percursos de referência</h2><label class="studio-row"><input type="checkbox" id="showRecorded" checked>Mostrar trajetos gravados</label><div class="draw-toolbar"><button id="hideRecordings" type="button">Ocultar todas as gravações</button><button id="showRecordings" type="button">Mostrar gravações</button></div><p id="recordVisibilityStatus" role="status" class="studio-hint"></p><div id="recordUsers" class="studio-users"></div><label class="studio-row"><input type="checkbox" id="showDrawn" checked>Mostrar ruas desenhadas</label><label class="studio-row"><input type="checkbox" id="showLocations" checked>Mostrar pontos dos locais</label><p class="studio-hint">Gravações: cinza fino. Ruas desenhadas: brancas com borda. As vias do mapa de fundo continuam visíveis.</p><p class="studio-hint">Ocultar muda apenas a visualização neste aparelho. As rotas usam somente as ruas desenhadas e salvas pelo administrador.</p></div><div class="card"><h2>Locais</h2><div id="pointsList" class="list"></div></div>
+  <div class="card" id="referenceMenu" hidden><h2>Percursos de referência</h2><label class="studio-row"><input type="checkbox" id="showRecorded" checked>Mostrar trajetos gravados</label><div class="draw-toolbar"><button id="hideRecordings" type="button">Ocultar todas as gravações</button><button id="showRecordings" type="button">Mostrar gravações</button></div><p id="recordVisibilityStatus" role="status" class="studio-hint"></p><div id="recordUsers" class="studio-users"></div><label class="studio-row"><input type="checkbox" id="showDrawn" checked>Mostrar ruas desenhadas</label><label class="studio-row"><input type="checkbox" id="showLocations" checked>Mostrar pontos dos locais</label><p class="studio-hint">Gravações: cinza fino. Ruas desenhadas: brancas com borda. As vias do mapa de fundo continuam visíveis.</p><p class="studio-hint">Ocultar muda apenas a visualização neste aparelho. As rotas usam somente as ruas desenhadas e salvas pelo administrador.</p></div><div class="card"><h2>Locais</h2><div id="pointsList" class="list"></div></div>
   <div class="card"><h2>Bloqueios</h2><div id="blocksList" class="list"></div></div>
 
   <div class="card">
@@ -1068,10 +1057,12 @@ function clearHandles(){editor.handles.forEach(m=>map.removeLayer(m));editor.han
 async function refreshAdmin(){
  const f=window.fbMap,user=f&&f.user;editor.authorized=false;
  document.getElementById('adminTools').hidden=true;
+ const referenceMenu=document.getElementById('referenceMenu');(referenceMenu.closest('details')||referenceMenu).hidden=true;
  document.getElementById('adminLogout').hidden=!user||user.isAnonymous;
  if(!user||user.isAnonymous)return;
  try{const snap=await f.get(f.ref(f.db,'administradores/'+user.uid));editor.authorized=snap.val()===true;
  document.getElementById('adminTools').hidden=!editor.authorized;
+ (referenceMenu.closest('details')||referenceMenu).hidden=!editor.authorized;
  document.getElementById('adminStatus').textContent=editor.authorized?'Administrador conectado.':'Conta conectada, sem permissão de administrador. UID: '+user.uid;
  }catch(e){document.getElementById('adminStatus').textContent='Não foi possível verificar a permissão. UID: '+user.uid}
 }
@@ -1362,7 +1353,7 @@ map.on('moveend zoomend',requestPerspective);window.addEventListener('resize',re
 document.getElementById('btnNorth').onclick=()=>{if(cleanNav.view!=='top'&&roadView.ready){gpsNav.follow=false;roadView.map.easeTo({bearing:0,duration:500})}else if(currentPosition)map.panTo(currentPosition)};
 const originalFollowClick=document.getElementById('btnFollow').onclick;document.getElementById('btnFollow').onclick=()=>{originalFollowClick();roadView.forceCamera=true;requestPerspective()};
 // Existing editing buttons remain available inside expandable menu sections.
-for(const card of [...document.querySelectorAll('aside > .card')]){const title=card.querySelector('h2');if(!title)continue;const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=title.textContent;summary.style.cssText='font-weight:700;padding:8px;cursor:pointer';title.remove();card.replaceWith(details);details.append(summary,card)}
+for(const card of [...document.querySelectorAll('aside > .card')]){const title=card.querySelector('h2');if(!title)continue;const details=document.createElement('details'),summary=document.createElement('summary');details.hidden=card.hidden;summary.textContent=title.textContent;summary.style.cssText='font-weight:700;padding:8px;cursor:pointer';title.remove();card.replaceWith(details);details.append(summary,card)}
 document.querySelector('aside').hidden=true;document.getElementById('routeSheet').hidden=true;
 showLocations=true;studio.showRecorded=false;document.getElementById('showLocations').checked=true;document.getElementById('showRecorded').checked=false;map.getPane('locationsPane').style.display='';updateVisibilityStatus();
 
