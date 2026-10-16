@@ -96,7 +96,7 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
 </style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.16 Rotas nas ruas desenhadas</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.17 Cálculo de rotas</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -1006,15 +1006,16 @@ function route(auto=false){
  const id=document.getElementById("dest").value,dest=state.points.find(p=>p.id===id);if(!dest){alert("Escolha um destino.");return}
  const g=graph(),a=g.snap(start),b=g.snap([dest.lat,dest.lon]);
  if(!a||!b){document.getElementById("routeInfo").textContent="Ainda não há ruas desenhadas disponíveis. O administrador precisa desenhar e salvar as ruas.";return}
- if(a.d>60||b.d>60){document.getElementById("routeInfo").textContent="Origem ou destino está a mais de 60 m de uma rua desenhada. Desenhe e salve o acesso antes de calcular a rota.";return}
+
  const r=dijkstra(g,a.k,b.k);if(!r){document.getElementById("routeInfo").textContent="Não existe ligação pelas ruas desenhadas. Confira os cruzamentos, os acessos e os bloqueios.";return}
- const coords=[start,a.p,...r.path.map(k=>g.get(k).p),b.p,[dest.lat,dest.lon]];
+ const coords=r.path.map(k=>g.get(k).p);
  if(routeLayer)map.removeLayer(routeLayer);
  routeLayer=L.polyline(coords,{color:"#00a9ed",weight:8,opacity:.95}).addTo(map);if(!auto)map.fitBounds(routeLayer.getBounds(),{padding:[45,45]});
- navigationActive=originId==='gps';lastRouteUpdate=Date.now();
- const total=r.distance+a.d+b.d;
- const banner=document.getElementById("navBanner");banner.style.display="block";banner.textContent="➤ "+dest.name+" • "+distText(total);
- document.getElementById("routeInfo").innerHTML="<b>"+esc(originPoint?originPoint.name:"Minha localização")+" → "+esc(dest.name)+"</b><br>Distância aproximada: "+distText(total)+"<br>Acessos fora da via: "+distText(a.d+b.d)
+ const incomplete=a.d>15||b.d>15;
+ navigationActive=originId==='gps'&&!incomplete;lastRouteUpdate=Date.now();
+ const total=r.distance;
+ const banner=document.getElementById("navBanner");banner.style.display="block";banner.textContent=(incomplete?"Trecho na malha • ":"➤ ")+dest.name+" • "+distText(total);
+ document.getElementById("routeInfo").innerHTML="<b>"+esc(originPoint?originPoint.name:"Minha localização")+" → "+esc(dest.name)+"</b><br>Distância pelas ruas desenhadas: "+distText(total)+"<br>Origem até a rua: "+distText(a.d)+" • Destino até a rua: "+distText(b.d)+(incomplete?"<br><strong>Acesso não mapeado: a linha azul mostra somente o trecho pelas ruas. Desenhe os acessos para completar a rota.</strong>":"")
 }
 function clearRoute(){navigationActive=false;document.getElementById("navBanner").style.display="none";if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("routeInfo").textContent="Escolha um destino."}
 function exportMap(){
@@ -1181,6 +1182,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 
