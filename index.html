@@ -100,15 +100,15 @@ html,body{height:100%;height:100dvh;overflow:hidden}header{height:46px;padding:8
 aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;width:min(380px,calc(100% - 16px));max-height:none;border-radius:20px;background:#fff;transform:none!important;box-shadow:0 8px 40px #173a4a40;padding:14px;overflow:auto}.sheet-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.sheet-heading button{background:#eef4f7;color:#173a4a;font-size:22px;min-height:36px;padding:3px 12px}.nav-launcher,.nav-menu,.view-toggle,#stopNavigation{position:absolute;z-index:1100;box-shadow:0 3px 16px #173a4a22;background:#fff;color:#173a4a}.nav-menu{left:12px;top:12px;width:44px;height:44px;border-radius:50%;padding:0;font-size:20px}.nav-launcher{left:68px;top:12px;right:68px;height:44px;text-align:left;border-radius:24px;font-size:15px}.view-toggle{right:12px;bottom:76px;border-radius:22px;font-size:13px;padding:10px 14px}#viewMenu{position:absolute;z-index:1300;right:12px;bottom:126px;background:white;box-shadow:0 4px 20px #173a4a33;border-radius:16px;padding:6px;display:grid;gap:5px}#viewMenu button{background:#eef4f7;color:#173a4a;font-size:13px;text-align:left}
 #panelToggle,.map-actions{display:none!important}.gps-controls{top:auto;bottom:16px;right:12px;background:white;border-radius:24px;max-width:none;gap:4px;padding:4px;box-shadow:0 3px 16px #173a4a22}.gps-controls #btnCompass,#compassText{display:none}.gps-controls button{min-height:38px;border-radius:20px}.compass-face{display:inline-block;width:28px;height:28px}.compass-face b{font-size:17px;line-height:16px}.leaflet-top.leaflet-right,.leaflet-top.leaflet-left{top:68px;right:12px;left:auto}#navBanner{left:12px;right:12px;top:68px;transform:none;max-width:none;width:auto;border-radius:18px;font-size:15px;padding:13px 16px;pointer-events:none}#navProgress{left:12px;right:auto;bottom:18px;transform:none;max-width:calc(100% - 215px);font-size:11px;padding:9px;border-radius:16px}#navHint{position:absolute;z-index:1050;left:12px;right:12px;top:124px;font-size:12px;text-align:center;color:#34596a;pointer-events:none}#navHint:empty{display:none}
 #routeSheet{position:absolute;z-index:1500;bottom:10px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 20px));max-height:calc(100% - 75px);overflow:auto;background:white;border-radius:24px;padding:16px;box-shadow:0 8px 40px #173a4a35}#routeSheet .card{padding:0;background:transparent;margin:0}#routeSheet .card>h2{display:none}#routeSheet select,#routeSheet label[for=origin],#routeSheet label[for=dest]{display:none!important}#routeSheet input{margin:6px 0;padding:13px;border-radius:16px;background:#f3f7fa}#routeSheet .row button{flex:1;font-size:13px}#routeInfo{font-size:12px;line-height:1.5}.autocomplete{position:relative}.suggestions{background:#fff;border:1px solid #d9e6ed;border-radius:14px;margin:0 0 8px;max-height:170px;overflow:auto;box-shadow:0 3px 8px #1231}.suggestions button{display:block;width:100%;border-radius:0;text-align:left;background:white;color:#173a4a;border-bottom:1px solid #edf2f5;padding:12px;font-weight:400;font-size:14px}.suggestions button:focus,.suggestions button:hover{background:#e3f2fc}.suggestions small{display:block;font-size:10px;color:#71858e}
-#perspectiveView{position:absolute;inset:0;width:100%;height:100%;z-index:500;background:#e9f0f3;touch-action:none}#navProgress{display:none}.navigating #navProgress{display:block}.navigating #openRoute{right:120px}.navigating #stopNavigation{display:block;right:12px;top:12px;height:44px;font-size:12px;border-radius:22px}.navigating .leaflet-recordings-pane,.navigating .leaflet-locations-pane{display:none!important}.navigating .leaflet-control-zoom{display:none}.navigating #navProgress{max-width:calc(100% - 160px)}
+#perspectiveView{position:absolute;inset:0;width:100%;height:100%;z-index:500;background:#e9f0f3;touch-action:none}#navProgress{display:none}.navigating #navProgress{display:block}.navigating #openRoute{right:120px}.navigating #stopNavigation{display:block;right:12px;top:12px;height:44px;font-size:12px;border-radius:22px}.navigating .leaflet-recordings-pane{display:none!important}.navigating .leaflet-control-zoom{display:none}.navigating #navProgress{max-width:calc(100% - 160px)}
 @media(min-width:801px){#routeSheet{left:16px;transform:none;bottom:16px}#navBanner{left:50%;transform:translateX(-50%);width:420px;right:auto}.nav-launcher{width:330px;right:auto}.navigating #openRoute{right:auto}#navHint{top:124px}}@media(max-width:400px){#btnFollow{font-size:10px!important;padding:7px!important}#navProgress{max-width:calc(100% - 165px)}.nav-launcher{font-size:13px}}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css"><style>
 #perspectiveMap{position:absolute;inset:0;z-index:500;width:100%;height:100%;background:#e8ece7}.perspective-mode .leaflet-control-zoom{display:none}.maplibregl-ctrl-attrib{font-size:9px!important}.navigation-location{width:46px;height:46px;filter:drop-shadow(0 3px 4px #1235)}.navigation-destination{background:white;color:#315ded;border:3px solid #315ded;border-radius:50%;font-size:23px;width:36px;height:36px;text-align:center;line-height:29px}.turn-banner{display:flex!important;align-items:center;gap:14px;text-align:left!important;background:#173a4a!important;padding:14px 18px!important}.turn-banner .turn-arrow{font-size:38px;line-height:1;color:white}.turn-banner b{display:block;font-size:17px;line-height:1.3}.turn-banner small{display:block;margin-top:5px;font-size:12px;color:#d6e7ef}#navHint{top:145px;background:#ffffffeb;border-radius:12px;padding:5px;font-size:11px}.perspective-mode #navHint:empty{display:none}
-</style></head>
+</style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.21 Visão de navegação</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.22 Locais na navegação</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -1257,7 +1257,7 @@ function setNavigationView(mode){
  if(perspective){roadView.forceCamera=true;loadRoadView().then(()=>{if(cleanNav.view!=='top')renderRoadView()}).catch(()=>{});requestPerspective()}else{map.invalidateSize();if(gpsNav.path){const frame=roadViewFrame();updateTurnBanner(frame)}}
 }
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setNavigationView(b.dataset.view));
-const roadView={map:null,ready:false,loading:null,marker:null,destinationMarker:null,roadsHash:null,forceCamera:true,turn:null,failed:false};
+const roadView={map:null,ready:false,loading:null,marker:null,destinationMarker:null,roadsHash:null,forceCamera:true,turn:null,failed:false,places:new Map()};
 function roadViewFrame(){
  const path=gpsNav.path||[];let center=null,match=null;
  if(path.length){if(cleanNav.started&&currentPosition){match=splitRouteProgress(path,currentPosition);center=match&&match.d<80?match.p:path[0]}else center=path[0]}
@@ -1304,8 +1304,8 @@ async function loadRoadView(){
  const el=document.createElement('div');el.className='navigation-location';el.innerHTML='<svg viewBox="0 0 48 48" width="46" height="46"><path d="M24 3 L43 42 Q24 32 5 42 Z" fill="#2586f8" stroke="white" stroke-width="4"/></svg>';
  roadView.marker=new maplibregl.Marker({element:el,rotationAlignment:'map',pitchAlignment:'viewport'}).setLngLat([frame.center[1],frame.center[0]]).addTo(roadView.map);
  roadView.map.on('dragstart',()=>{gpsNav.follow=false;document.getElementById('btnFollow').textContent='◎ Recentralizar'});roadView.map.on('rotatestart',e=>{if(e.originalEvent)gpsNav.follow=false});
- roadView.ready=true;roadView.forceCamera=true;roadView.failed=false;renderRoadView();
- })().catch(err=>{if(roadView.map){roadView.map.remove();roadView.map=null}roadView.ready=false;roadView.loading=null;roadView.failed=true;setNavigationView('top');document.getElementById('navHint').textContent=err.message+' A vista superior continua disponível.';throw err});
+ roadView.ready=true;roadView.forceCamera=true;roadView.failed=false;roadView.map.on('move',layoutNavigationPlaceLabels);syncNavigationPlaces();renderRoadView();
+ })().catch(err=>{if(roadView.map){roadView.map.remove();roadView.map=null}roadView.places.clear();roadView.marker=null;roadView.destinationMarker=null;roadView.roadsHash=null;roadView.ready=false;roadView.loading=null;roadView.failed=true;setNavigationView('top');document.getElementById('navHint').textContent=err.message+' A vista superior continua disponível.';throw err});
  return roadView.loading;
 }
 function renderRoadView(){
@@ -1316,10 +1316,39 @@ function renderRoadView(){
  roadView.marker.setLngLat([frame.center[1],frame.center[0]]).setRotation(frame.bearing);
  if(path.length){const end=path[path.length-1];if(!roadView.destinationMarker){const el=document.createElement('div');el.className='navigation-destination';el.textContent='⚑';roadView.destinationMarker=new maplibregl.Marker({element:el}).setLngLat([end[1],end[0]]).addTo(m)}else roadView.destinationMarker.setLngLat([end[1],end[0]])}else if(roadView.destinationMarker){roadView.destinationMarker.remove();roadView.destinationMarker=null}
  if(roadView.forceCamera||(gpsNav.follow&&cleanNav.started)){const h=document.getElementById('perspectiveMap').clientHeight,driver=cleanNav.view==='driver';m.easeTo({center:[frame.center[1],frame.center[0]],bearing:frame.bearing,pitch:driver?64:48,zoom:driver?18.7:17.8,padding:{top:Math.round(h*.37),bottom:85,left:18,right:18},duration:roadView.forceCamera?0:650});roadView.forceCamera=false}
- updateTurnBanner(frame);
+ syncNavigationPlaces();updateTurnBanner(frame);
 }
 function requestPerspective(){if(cleanNav.view==='top'||cleanNav.frame)return;cleanNav.frame=requestAnimationFrame(()=>{cleanNav.frame=null;renderRoadView()})}
 function drawPerspective(){renderRoadView()}
+
+function navigationPlaceIcon(category){const text=(category||'').toLocaleLowerCase();if(text.includes('subesta'))return '⚡';if(text.includes('ambul')||text.includes('medic'))return '✚';if(text.includes('refeit')||text.includes('restaur'))return '🍴';if(text.includes('remot')||text.includes('controle'))return '▣';return '●'}
+function syncNavigationPlaces(){
+ if(!roadView.ready)return;const m=roadView.map;
+ if(!showLocations){for(const marker of roadView.places.values())marker.getElement().style.display='none';return}
+ const ids=new Set();for(const p of state.points){if(!Number.isFinite(p.lat)||!Number.isFinite(p.lon))continue;ids.add(p.id);let marker=roadView.places.get(p.id);
+ if(!marker){const el=document.createElement('div');el.className='navigation-place';el.tabIndex=0;el.setAttribute('role','button');
+ const icon=document.createElement('span');icon.className='navigation-place-icon';const label=document.createElement('span');label.className='navigation-place-label';el.append(icon,label);
+ const open=()=>{const current=state.points.find(x=>x.id===p.id);if(!current)return;const popup=document.createElement('div'),name=document.createElement('b'),category=document.createElement('p'),destination=document.createElement('button');name.textContent=current.name;category.textContent=current.category||'Local';destination.textContent='Ir para este local';destination.onclick=()=>{chooseEndpoint('dest',current.id,current.name);openPlanner()};popup.append(name,category,destination);new maplibregl.Popup({offset:18,closeButton:true}).setLngLat([current.lon,current.lat]).setDOMContent(popup).addTo(m)};
+ el.onclick=e=>{e.stopPropagation();open()};el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
+ marker=new maplibregl.Marker({element:el,anchor:'center',pitchAlignment:'viewport',rotationAlignment:'viewport'}).setLngLat([p.lon,p.lat]).addTo(m);roadView.places.set(p.id,marker);
+ }
+ marker.setLngLat([p.lon,p.lat]);const el=marker.getElement();el.setAttribute('aria-label',p.name);el.title=p.name;el.querySelector('.navigation-place-icon').textContent=navigationPlaceIcon(p.category);el.querySelector('.navigation-place-label').textContent=p.name;el.style.display='';
+ }
+ for(const [id,marker] of roadView.places)if(!ids.has(id)){marker.remove();roadView.places.delete(id)}
+ layoutNavigationPlaceLabels();
+}
+function layoutNavigationPlaceLabels(){
+ if(!roadView.ready)return;const m=roadView.map,canvas=m.getCanvas(),occupied=[],target=document.getElementById('dest').value;
+ const points=[...state.points].sort((a,b)=>(b.id===target?1:0)-(a.id===target?1:0));
+ for(const p of points){const marker=roadView.places.get(p.id);if(!marker)continue;const el=marker.getElement(),label=el.querySelector('.navigation-place-label');if(!showLocations){el.style.display='none';continue}
+ const px=m.project([p.lon,p.lat]),visible=Number.isFinite(px.x)&&Number.isFinite(px.y)&&px.x>=-30&&px.x<=canvas.clientWidth+30&&px.y>=-30&&px.y<=canvas.clientHeight+30;
+ el.style.display=visible?'':'none';if(!visible)continue;
+ const width=Math.min(170,Math.max(60,p.name.length*6)),box={x:px.x+18,y:px.y-12,w:width,h:25};const overlap=occupied.some(r=>box.x<r.x+r.w+8&&box.x+box.w+8>r.x&&box.y<r.y+r.h+5&&box.y+box.h+5>r.y);
+ const show=(m.getZoom()>=16.5||p.id===target)&&!overlap;label.hidden=!show;if(show)occupied.push(box);
+ }
+}
+const originalRenderPointsForNavigation=renderPoints;renderPoints=function(){originalRenderPointsForNavigation();if(roadView.ready)syncNavigationPlaces()};
+const previousLocationsToggle=document.getElementById('showLocations').onchange;document.getElementById('showLocations').onchange=e=>{previousLocationsToggle(e);if(roadView.ready)syncNavigationPlaces()};
 
 const originalUpdateGpsNavigation=updateGpsNavigation;updateGpsNavigation=function(p,previous){originalUpdateGpsNavigation(p,previous);if(gpsNav.path&&navigationActive)updateTurnBanner(roadViewFrame());requestPerspective()};
 const originalUpdateCompass=updateCompass;updateCompass=function(heading){originalUpdateCompass(heading);requestPerspective()};
@@ -1332,7 +1361,7 @@ const originalFollowClick=document.getElementById('btnFollow').onclick;document.
 // Existing editing buttons remain available inside expandable menu sections.
 for(const card of [...document.querySelectorAll('aside > .card')]){const title=card.querySelector('h2');if(!title)continue;const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=title.textContent;summary.style.cssText='font-weight:700;padding:8px;cursor:pointer';title.remove();card.replaceWith(details);details.append(summary,card)}
 document.querySelector('aside').hidden=true;document.getElementById('routeSheet').hidden=true;
-showLocations=false;studio.showRecorded=false;document.getElementById('showLocations').checked=false;document.getElementById('showRecorded').checked=false;map.getPane('locationsPane').style.display='none';updateVisibilityStatus();
+showLocations=true;studio.showRecorded=false;document.getElementById('showLocations').checked=true;document.getElementById('showRecorded').checked=false;map.getPane('locationsPane').style.display='';updateVisibilityStatus();
 
 renderAll();
 renderRecordUsers();
@@ -1344,6 +1373,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 
