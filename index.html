@@ -96,7 +96,7 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
 </style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.14 Desenho de ruas</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.15 Origem e camadas</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -142,8 +142,8 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
 
   <div class="card">
     <h2>Navegação</h2>
-    <input id="searchDest" type="search" placeholder="Para onde vamos?" aria-label="Buscar destino">
-    <select id="dest"><option value="">Escolha o destino</option></select>
+    <label for="origin" style="display:block;font-size:12px;margin:8px 0">Origem</label><input id="searchOrigin" type="search" placeholder="Buscar origem" aria-label="Buscar origem"><select id="origin" aria-label="Origem"><option value="gps">Minha localização (GPS)</option></select><label for="dest" style="display:block;font-size:12px;margin:8px 0">Destino</label><input id="searchDest" type="search" placeholder="Para onde vamos?" aria-label="Buscar destino">
+    <select id="dest" aria-label="Destino"><option value="">Escolha o destino</option></select>
     <div class="row" style="margin-top:10px">
       <button id="btnRoute">Calcular rota</button>
       <button id="btnClear" class="dark">Limpar</button>
@@ -160,7 +160,7 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
     <p style="font-size:12px;color:#6c7780">Ponto usa sua posição atual. Para bloquear, toque no botão, toque na rua e arraste INÍCIO/FIM para definir a extensão. Para retirar, toque no bloqueio na lista.</p>
   </div>
 
-  <div class="card"><h2>Percursos de referência</h2><label class="studio-row"><input type="checkbox" id="showRecorded" checked>Mostrar trajetos gravados</label><div id="recordUsers" class="studio-users"></div><p class="studio-hint">Ocultar muda apenas a visualização neste aparelho. Para calcular rotas só nas ruas desenhadas, o administrador deve ativar e salvar essa opção no editor.</p></div><div class="card"><h2>Locais</h2><div id="pointsList" class="list"></div></div>
+  <div class="card"><h2>Percursos de referência</h2><label class="studio-row"><input type="checkbox" id="showRecorded" checked>Mostrar trajetos gravados</label><div class="draw-toolbar"><button id="hideRecordings" type="button">Ocultar todas as gravações</button><button id="showRecordings" type="button">Mostrar gravações</button></div><p id="recordVisibilityStatus" role="status" class="studio-hint"></p><div id="recordUsers" class="studio-users"></div><label class="studio-row"><input type="checkbox" id="showDrawn" checked>Mostrar ruas desenhadas</label><label class="studio-row"><input type="checkbox" id="showLocations" checked>Mostrar pontos dos locais</label><p class="studio-hint">Gravações: cinza fino. Ruas desenhadas: brancas com borda. As vias do mapa de fundo continuam visíveis.</p><p class="studio-hint">Ocultar muda apenas a visualização neste aparelho. Para calcular rotas só nas ruas desenhadas, o administrador deve ativar e salvar essa opção no editor.</p></div><div class="card"><h2>Locais</h2><div id="pointsList" class="list"></div></div>
   <div class="card"><h2>Bloqueios</h2><div id="blocksList" class="list"></div></div>
 
   <div class="card">
@@ -268,6 +268,11 @@ const SEED_POINTS = [{"id": "seed-0", "name": "Chapeira", "category": "Local", "
 const STORAGE_KEY = "mapa_alunorte_v05";
 
 const map=L.map("map",{zoomControl:false});
+map.createPane('recordingsPane');map.getPane('recordingsPane').style.zIndex=410;
+map.createPane('drawnPane');map.getPane('drawnPane').style.zIndex=420;
+map.createPane('locationsPane');map.getPane('locationsPane').style.zIndex=600;
+let showDrawn=true,showLocations=true;
+
 L.control.zoom({position:"topright"}).addTo(map);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap"}).addTo(map);
 
@@ -532,6 +537,7 @@ async function toggleRecord(){
 }
 
 function renderRoads(){
+ map.getPane("recordingsPane").style.display=studio.showRecorded?"":"none";
  roadLayers.forEach(x=>map.removeLayer(x));roadLayers=[];
  state.traces.forEach((t,ti)=>{
    if(ti>=state.recordedCount&&ti<state.recordedCount+(state.drawnRoadIds||[]).length)return;
@@ -539,7 +545,7 @@ function renderRoads(){
    if(!studio.showRecorded||studio.hiddenUsers.has(owner))return;
    for(let i=0;i<t.length-1;i++){
      const isB=blocked(ti,i);
-     const l=L.polyline([t[i],t[i+1]],{color:isB?"#b95946":"#8c9fa9",weight:isB?7:3,opacity:.65,dashArray:isB?"10 7":null}).addTo(map);
+     const l=L.polyline([t[i],t[i+1]],{pane:"recordingsPane",color:isB?"#b95946":"#8c9fa9",weight:isB?7:3,opacity:.65,dashArray:isB?"10 7":null}).addTo(map);
      l.on("click",e=>{if(studio.tool!=="select"){handleStudioClick(e);return}if(editor.active){selectEditRoad(ti);return}if(blockMode && !blockStartMarker)beginBlockRange(ti,i)});
      roadLayers.push(l)
    }
@@ -551,16 +557,18 @@ function markerIcon(cat){
 }
 function renderPoints(){
  pointLayers.forEach(x=>map.removeLayer(x));pointLayers=[];
+ const origin=document.getElementById("origin"),oldOrigin=origin.value;origin.innerHTML='<option value="gps">Minha localização (GPS)</option>';
  const sel=document.getElementById("dest"), old=sel.value;sel.innerHTML='<option value="">Escolha o destino</option>';
  const list=document.getElementById("pointsList");list.innerHTML="";
  state.points.forEach(p=>{
-   const m=L.marker([p.lat,p.lon],{icon:markerIcon(p.category)}).addTo(map).bindPopup("<b>"+esc(p.name)+"</b><br>"+esc(p.category||"Local"));
+   const m=L.marker([p.lat,p.lon],{pane:"locationsPane",icon:markerIcon(p.category)}).addTo(map).bindPopup("<b>"+esc(p.name)+"</b><br>"+esc(p.category||"Local"));
    pointLayers.push(m);
-   const o=document.createElement("option");o.value=p.id;o.textContent=p.name;sel.appendChild(o);
+   const o=document.createElement("option");o.value=p.id;o.textContent=p.name;sel.appendChild(o);origin.appendChild(o.cloneNode(true));
    const d=document.createElement("div");d.className="item";d.innerHTML="<b>"+esc(p.name)+"</b><span class='badge'>"+esc(p.category||"Local")+"</span>";
    d.onclick=()=>{map.setView([p.lat,p.lon],19);m.openPopup()};list.appendChild(d)
  });
- if([...sel.options].some(o=>o.value===old))sel.value=old
+ if([...sel.options].some(o=>o.value===old))sel.value=old;
+ if([...origin.options].some(o=>o.value===oldOrigin))origin.value=oldOrigin;applyLocationFilters()
 }
 function renderBlocks(){
  const list=document.getElementById("blocksList");
@@ -991,19 +999,22 @@ let navigationActive=false,lastRouteUpdate=0;
 function route(auto=false){
  if(studio.dirty){document.getElementById("routeInfo").textContent="Salve ou descarte o desenho antes de calcular uma rota.";return}
  if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("navBanner").style.display="none";lastRouteUpdate=Date.now();
- if(!currentPosition){alert("A localização ainda não está disponível.");return}
+ const originId=document.getElementById("origin").value;
+ const originPoint=state.points.find(p=>p.id===originId);
+ const start=originId==='gps'?currentPosition:originPoint?[originPoint.lat,originPoint.lon]:null;
+ if(!start){document.getElementById("routeInfo").textContent=originId==='gps'?"GPS indisponível. Escolha um local cadastrado como origem.":"Escolha uma origem válida.";return}
  const id=document.getElementById("dest").value,dest=state.points.find(p=>p.id===id);if(!dest){alert("Escolha um destino.");return}
- const g=graph(),a=g.snap(currentPosition),b=g.snap([dest.lat,dest.lon]);
+ const g=graph(),a=g.snap(start),b=g.snap([dest.lat,dest.lon]);
  if(!a||!b){document.getElementById("routeInfo").textContent="Ainda não há ruas suficientes.";return}
  if(a.d>60||b.d>60){document.getElementById("routeInfo").textContent="Origem ou destino está a mais de 60 m de uma via cadastrada. Grave o acesso antes de navegar.";return}
  const r=dijkstra(g,a.k,b.k);if(!r){document.getElementById("routeInfo").textContent="Não existe rota disponível. Pode haver bloqueios ou falta de ruas mapeadas.";return}
- const coords=[currentPosition,a.p,...r.path.map(k=>g.get(k).p),b.p,[dest.lat,dest.lon]];
+ const coords=[start,a.p,...r.path.map(k=>g.get(k).p),b.p,[dest.lat,dest.lon]];
  if(routeLayer)map.removeLayer(routeLayer);
  routeLayer=L.polyline(coords,{color:"#00a9ed",weight:8,opacity:.95}).addTo(map);if(!auto)map.fitBounds(routeLayer.getBounds(),{padding:[45,45]});
- navigationActive=true;lastRouteUpdate=Date.now();
+ navigationActive=originId==='gps';lastRouteUpdate=Date.now();
  const total=r.distance+a.d+b.d;
  const banner=document.getElementById("navBanner");banner.style.display="block";banner.textContent="➤ "+dest.name+" • "+distText(total);
- document.getElementById("routeInfo").innerHTML="<b>"+esc(dest.name)+"</b><br>Distância aproximada: "+distText(total)+"<br>Acessos fora da via: "+distText(a.d+b.d)
+ document.getElementById("routeInfo").innerHTML="<b>"+esc(originPoint?originPoint.name:"Minha localização")+" → "+esc(dest.name)+"</b><br>Distância aproximada: "+distText(total)+"<br>Acessos fora da via: "+distText(a.d+b.d)
 }
 function clearRoute(){navigationActive=false;document.getElementById("navBanner").style.display="none";if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("routeInfo").textContent="Escolha um destino."}
 function exportMap(){
@@ -1092,15 +1103,16 @@ function finishStudio(){if(!canDraw())return;const min=studio.tool==='curve'?3:2
 function handleStudioClick(e){if(studio.tool==='select'||!canDraw())return;if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(studio.tool==='freehand')return;studio.points.push([e.latlng.lat,e.latlng.lng]);if((studio.tool==='line'&&studio.points.length===2)||(studio.tool==='curve'&&studio.points.length===3))finishStudio();else renderStudio()}
 function selectStudio(id){if(!canDraw()||studio.tool!=='select')return;studio.selected=id;studio.node=null;renderStudio();studioStatus('Arraste os pontos laranja. O marcador ↔ move a rua inteira.')}
 function renderStudio(){
+ map.getPane("drawnPane").style.display=showDrawn?"":"none";
  studio.layers.forEach(l=>map.removeLayer(l));studio.layers=[];studio.handles.forEach(l=>map.removeLayer(l));studio.handles=[];syncStudioGeometry();
  for(const [id,r] of Object.entries(studio.roads)){const coords=studioGeometry(r);if(coords.length<2)continue;
  const selected=id===studio.selected;
- const outline=L.polyline(coords,{color:selected?'#efaa36':'#647d8a',weight:(r.width||9)+4,opacity:1}).addTo(map);studio.layers.push(outline);
- const inner=L.polyline(coords,{color:'#fff',weight:r.width||9,opacity:1}).addTo(map);studio.layers.push(inner);
+ const outline=L.polyline(coords,{pane:"drawnPane",color:selected?'#efaa36':'#647d8a',weight:(r.width||9)+4,opacity:1}).addTo(map);studio.layers.push(outline);
+ const inner=L.polyline(coords,{pane:'drawnPane',color:'#fff',weight:r.width||9,opacity:1}).addTo(map);studio.layers.push(inner);
  for(const l of [outline,inner])l.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(studio.tool!=='select')handleStudioClick(e);else if(blockMode){const ti=state.recordedCount+state.drawnRoadIds.indexOf(id),q=nearestRoadNode(e.latlng,ti);if(q)beginBlockRange(ti,Math.min(q.pi,coords.length-2))}else selectStudio(id)});
  // Blocked portions stay visible on official streets.
- const ti=state.recordedCount+state.drawnRoadIds.indexOf(id);for(let i=0;i<coords.length-1;i++)if(blocked(ti,i))studio.layers.push(L.polyline([coords[i],coords[i+1]],{color:'#ed615b',weight:9,dashArray:'8 7'}).addTo(map));
- if(selected&&editor.authorized&&studio.tool==='select'&&!editor.active&&!studio.saving){
+ const ti=state.recordedCount+state.drawnRoadIds.indexOf(id);for(let i=0;i<coords.length-1;i++)if(blocked(ti,i))studio.layers.push(L.polyline([coords[i],coords[i+1]],{pane:'drawnPane',color:'#ed615b',weight:9,dashArray:'8 7'}).addTo(map));
+ if(showDrawn&&selected&&editor.authorized&&studio.tool==='select'&&!editor.active&&!studio.saving){
  r.controls.forEach((p,i)=>{const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',html:'<div class="studio-node" style="'+(studio.node===i?'background:#efaa36':'')+'"></div>',iconSize:[15,15],iconAnchor:[7,7]})}).addTo(map);m.on('click',()=>{studio.node=i;studioStatus('Ponto '+(i+1)+' selecionado. Você pode remover esse ponto.')});m.on('dragstart',checkpoint);m.on('dragend',()=>{const p=m.getLatLng(),pos=[p.lat,p.lng];r.controls[i]=(i===0||i===r.controls.length-1)?studioSnap(pos,id):pos;studio.node=i;renderStudio()});studio.handles.push(m)});
  const center=r.controls.reduce((a,p)=>[a[0]+p[0]/r.controls.length,a[1]+p[1]/r.controls.length],[0,0]);const move=L.marker(center,{draggable:true,icon:L.divIcon({className:'',html:'<div class="studio-move">↔</div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);move.on('dragstart',checkpoint);move.on('dragend',()=>{const p=move.getLatLng(),delta=[p.lat-center[0],p.lng-center[1]];r.controls=r.controls.map(x=>[x[0]+delta[0],x[1]+delta[1]]);renderStudio()});studio.handles.push(move);
  }
@@ -1111,8 +1123,8 @@ function renderStudio(){
  document.getElementById('studioOfficial').checked=studio.official;
  const list=document.getElementById('studioRoadList');list.innerHTML='';for(const [id,r] of Object.entries(studio.roads)){const b=document.createElement('button');b.textContent=r.name;b.onclick=()=>{setStudioTool('select');selectStudio(id);map.fitBounds(L.latLngBounds(studioGeometry(r)),{padding:[60,60]})};list.appendChild(b)}
 }
-function renderRecordUsers(){const el=document.getElementById('recordUsers');el.innerHTML='';const owners=new Set(['original',...Object.values(rawRoads).map(r=>r.uid||'sem-autor')]);for(const owner of owners){const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=!studio.hiddenUsers.has(owner);check.onchange=()=>{if(check.checked)studio.hiddenUsers.delete(owner);else studio.hiddenUsers.add(owner);renderRoads();persistVisibility()};label.append(check,document.createTextNode(owner==='original'?'Percurso original':owner==='sem-autor'?'Gravações antigas sem autor':'Usuário '+owner.slice(0,10)+'…'));label.title=owner;el.appendChild(label)}}
-function persistVisibility(){try{localStorage.setItem('mapa-record-visibility',JSON.stringify({show:studio.showRecorded,hidden:[...studio.hiddenUsers]}))}catch(e){}}
+function renderRecordUsers(){const el=document.getElementById('recordUsers');el.innerHTML='';const owners=new Set(['original',...Object.values(rawRoads).map(r=>r.uid||'sem-autor')]);for(const owner of owners){const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=!studio.hiddenUsers.has(owner);check.disabled=!studio.showRecorded;check.onchange=()=>{if(check.checked)studio.hiddenUsers.delete(owner);else studio.hiddenUsers.add(owner);renderRoads();persistVisibility();updateVisibilityStatus()};label.append(check,document.createTextNode(owner==='original'?'Percurso original':owner==='sem-autor'?'Gravações antigas sem autor':'Usuário '+owner.slice(0,10)+'…'));label.title=owner;el.appendChild(label)}}
+function persistVisibility(){try{localStorage.setItem('mapa-record-visibility',JSON.stringify({show:studio.showRecorded,hidden:[...studio.hiddenUsers],drawn:showDrawn,locations:showLocations}))}catch(e){}}
 async function saveStudio(){
  if(!canDraw())return;if(studio.points.length){studioStatus('Conclua ou cancele o desenho atual antes de salvar.');return}if(!studio.dirty){studioStatus('Nenhuma alteração para salvar.');return}
  if(studio.official&&!Object.keys(studio.roads).length){studioStatus('Desenhe ao menos uma rua antes de ativar a navegação exclusiva.');return}
@@ -1134,8 +1146,8 @@ document.getElementById('studioRemoveNode').onclick=()=>{const r=studio.roads[st
 document.getElementById('studioStraighten').onclick=()=>{const r=studio.roads[studio.selected];if(!canDraw()||!r)return;checkpoint();r.controls=[r.controls[0],r.controls[r.controls.length-1]];r.type='line';studio.node=null;renderStudio()};
 document.getElementById('studioSave').onclick=saveStudio;
 document.getElementById('studioCancel').onclick=()=>{if(studio.saving)return;if(studio.dirty&&!confirm('Descartar as alterações ainda não salvas?'))return;studio.dirty=false;studio.points=[];studio.tool='select';studio.selected=null;studio.undo=[];studio.redo=[];map.dragging.enable();rebuildRoads();studioStatus('Rascunho descartado.')};
-document.getElementById('showRecorded').onchange=e=>{studio.showRecorded=e.target.checked;renderRoads();persistVisibility()};
-try{const v=JSON.parse(localStorage.getItem('mapa-record-visibility')||'null');if(v){studio.showRecorded=v.show!==false;studio.hiddenUsers=new Set(v.hidden||[]);document.getElementById('showRecorded').checked=studio.showRecorded}}catch(e){}
+document.getElementById('showRecorded').onchange=e=>setRecordedVisibility(e.target.checked);
+try{const v=JSON.parse(localStorage.getItem('mapa-record-visibility')||'null');if(v){studio.showRecorded=v.show!==false;showDrawn=v.drawn!==false;showLocations=v.locations!==false;studio.hiddenUsers=new Set(v.hidden||[]);document.getElementById('showRecorded').checked=studio.showRecorded}}catch(e){}
 map.on('click',handleStudioClick);
 let freehandDown=false;
 map.on('mousedown',e=>{if(studio.tool==='freehand'&&canDraw()){freehandDown=true;studio.points=[[e.latlng.lat,e.latlng.lng]]}});
@@ -1144,6 +1156,20 @@ map.on('mouseup',()=>{if(freehandDown){freehandDown=false;if(studio.points.lengt
 document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.key==='Escape'){studio.points=[];studio.tool='select';freehandDown=false;map.dragging.enable();renderStudio()}if(e.key==='Enter'&&studio.points.length)finishStudio();if(e.key==='Delete'&&editor.authorized)document.getElementById('studioDelete').click();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&editor.authorized){e.preventDefault();document.getElementById(e.shiftKey?'studioRedo':'studioUndo').click()}});
 window.addEventListener('beforeunload',e=>{if(studio.dirty){e.preventDefault();e.returnValue=''}});
 
+
+function updateVisibilityStatus(){const el=document.getElementById('recordVisibilityStatus');el.textContent=studio.showRecorded?'Gravações visíveis dos usuários marcados abaixo.':'Todas as gravações estão ocultas. As ruas desenhadas e o mapa de fundo são camadas diferentes.'}
+function setRecordedVisibility(visible){studio.showRecorded=visible;document.getElementById('showRecorded').checked=visible;renderRoads();renderRecordUsers();persistVisibility();updateVisibilityStatus()}
+function applyLocationFilters(){for(const [selectId,searchId] of [['origin','searchOrigin'],['dest','searchDest']]){const q=document.getElementById(searchId).value.toLocaleLowerCase();for(const o of document.getElementById(selectId).options)o.hidden=!!o.value&&o.value!=='gps'&&!o.textContent.toLocaleLowerCase().includes(q)}}
+document.getElementById('searchOrigin').oninput=applyLocationFilters;
+document.getElementById('origin').onchange=clearRoute;
+document.getElementById('dest').onchange=clearRoute;
+document.getElementById('hideRecordings').onclick=()=>setRecordedVisibility(false);
+document.getElementById('showRecordings').onclick=()=>{studio.hiddenUsers.clear();setRecordedVisibility(true)};
+document.getElementById('showDrawn').checked=showDrawn;
+document.getElementById('showLocations').checked=showLocations;
+document.getElementById('showDrawn').onchange=e=>{showDrawn=e.target.checked;map.getPane('drawnPane').style.display=showDrawn?'':'none';if(!showDrawn){studio.handles.forEach(m=>map.removeLayer(m));studio.handles=[]}else renderStudio();persistVisibility()};
+document.getElementById('showLocations').onchange=e=>{showLocations=e.target.checked;map.getPane('locationsPane').style.display=showLocations?'':'none';persistVisibility()};
+map.getPane('locationsPane').style.display=showLocations?'':'none';updateVisibilityStatus();
 document.getElementById("panelToggle").onclick=()=>{document.querySelector("aside").classList.toggle("folded");setTimeout(()=>map.invalidateSize(),220)};
 document.getElementById("searchDest").oninput=e=>{const q=e.target.value.toLocaleLowerCase();for(const o of document.getElementById("dest").options)o.hidden=!!o.value&&!o.textContent.toLocaleLowerCase().includes(q);for(const el of document.querySelectorAll("#pointsList .item"))el.style.display=el.textContent.toLocaleLowerCase().includes(q)?"":"none"};
 state.recordedCount=state.traces.length;state.drawnRoadIds=[];
@@ -1157,6 +1183,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 
