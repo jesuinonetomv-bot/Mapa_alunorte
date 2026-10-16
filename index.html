@@ -95,14 +95,22 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
 .draw-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.draw-toolbar button{font-size:12px;padding:8px 10px;min-height:36px}.draw-toolbar button.active{outline:3px solid #f2aa32;background:#173a4a}.studio-hint{font-size:12px;line-height:1.5}.studio-row{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px}.studio-row input[type=checkbox]{width:auto}.studio-node{width:15px;height:15px;background:#fff;border:3px solid #ec9a24;border-radius:50%;box-shadow:0 1px 5px #1236}.studio-move{width:24px;height:24px;border-radius:50%;background:#173a4a;color:white;text-align:center;line-height:24px}.studio-users{max-height:140px;overflow:auto}.studio-users label{display:flex;align-items:center;gap:7px;font-size:12px;padding:4px}.studio-users input{width:auto}#studioPanel{border:2px solid #d7edf4;padding:10px;border-radius:16px;margin-top:12px}.studio-road-list{max-height:130px;overflow:auto}.studio-road-list button{display:block;margin:5px 0;width:100%;text-align:left;font-size:12px;background:#e0f2f8;color:#173a4a}#studioStatus{font-size:12px;line-height:1.5}#studioName{font-size:13px}
 </style><style>
 .gps-controls{position:absolute;z-index:1050;right:64px;top:12px;display:flex;gap:6px;align-items:center;background:#fffffff2;border-radius:20px;padding:7px;box-shadow:0 2px 12px #1232}.gps-controls button{background:#e6f3fc;color:#173a4a;font-size:12px;padding:8px;min-height:38px}.compass-face{position:relative;width:38px;height:38px;border:1px solid #aac4d2;border-radius:50%;text-align:center;color:#de4c42;font-size:11px}.compass-face b{display:block;color:#1769e0;font-size:22px;line-height:24px;transform-origin:50% 50%}#compassText{font-size:10px;color:#34596a;max-width:125px}#navProgress{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:1010;background:#fffffff2;border-radius:14px;padding:8px 12px;font-size:12px;pointer-events:none;max-width:70%;text-align:center}#navProgress:empty{display:none}@media(max-width:800px){.gps-controls{top:12px;right:58px;max-width:65%;flex-wrap:wrap;justify-content:flex-end}.gps-controls button{font-size:10px;min-height:32px;padding:6px}.compass-face{width:32px;height:32px}#compassText{max-width:85px}#navProgress{bottom:calc(45vh + 16px);width:85%;max-width:none}}
-</style></head>
+</style><style>
+html,body{height:100%;height:100dvh;overflow:hidden}header{height:46px;padding:8px 14px}header h1{font-size:16px}header h1 span,header small{display:none}#app{position:relative;height:calc(100dvh - 46px)}#mapWrap,#map{height:100%;min-height:0}button{touch-action:manipulation}[hidden]{display:none!important}
+aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;width:min(380px,calc(100% - 16px));max-height:none;border-radius:20px;background:#fff;transform:none!important;box-shadow:0 8px 40px #173a4a40;padding:14px;overflow:auto}.sheet-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.sheet-heading button{background:#eef4f7;color:#173a4a;font-size:22px;min-height:36px;padding:3px 12px}.nav-launcher,.nav-menu,.view-toggle,#stopNavigation{position:absolute;z-index:1100;box-shadow:0 3px 16px #173a4a22;background:#fff;color:#173a4a}.nav-menu{left:12px;top:12px;width:44px;height:44px;border-radius:50%;padding:0;font-size:20px}.nav-launcher{left:68px;top:12px;right:68px;height:44px;text-align:left;border-radius:24px;font-size:15px}.view-toggle{right:12px;bottom:76px;border-radius:22px;font-size:13px;padding:10px 14px}#viewMenu{position:absolute;z-index:1300;right:12px;bottom:126px;background:white;box-shadow:0 4px 20px #173a4a33;border-radius:16px;padding:6px;display:grid;gap:5px}#viewMenu button{background:#eef4f7;color:#173a4a;font-size:13px;text-align:left}
+#panelToggle,.map-actions{display:none!important}.gps-controls{top:auto;bottom:16px;right:12px;background:white;border-radius:24px;max-width:none;gap:4px;padding:4px;box-shadow:0 3px 16px #173a4a22}.gps-controls #btnCompass,#compassText{display:none}.gps-controls button{min-height:38px;border-radius:20px}.compass-face{display:inline-block;width:28px;height:28px}.compass-face b{font-size:17px;line-height:16px}.leaflet-top.leaflet-right,.leaflet-top.leaflet-left{top:68px;right:12px;left:auto}#navBanner{left:12px;right:12px;top:68px;transform:none;max-width:none;width:auto;border-radius:18px;font-size:15px;padding:13px 16px;pointer-events:none}#navProgress{left:12px;right:auto;bottom:18px;transform:none;max-width:calc(100% - 215px);font-size:11px;padding:9px;border-radius:16px}#navHint{position:absolute;z-index:1050;left:12px;right:12px;top:124px;font-size:12px;text-align:center;color:#34596a;pointer-events:none}#navHint:empty{display:none}
+#routeSheet{position:absolute;z-index:1500;bottom:10px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 20px));max-height:calc(100% - 75px);overflow:auto;background:white;border-radius:24px;padding:16px;box-shadow:0 8px 40px #173a4a35}#routeSheet .card{padding:0;background:transparent;margin:0}#routeSheet .card>h2{display:none}#routeSheet select,#routeSheet label[for=origin],#routeSheet label[for=dest]{display:none!important}#routeSheet input{margin:6px 0;padding:13px;border-radius:16px;background:#f3f7fa}#routeSheet .row button{flex:1;font-size:13px}#routeInfo{font-size:12px;line-height:1.5}.autocomplete{position:relative}.suggestions{background:#fff;border:1px solid #d9e6ed;border-radius:14px;margin:0 0 8px;max-height:170px;overflow:auto;box-shadow:0 3px 8px #1231}.suggestions button{display:block;width:100%;border-radius:0;text-align:left;background:white;color:#173a4a;border-bottom:1px solid #edf2f5;padding:12px;font-weight:400;font-size:14px}.suggestions button:focus,.suggestions button:hover{background:#e3f2fc}.suggestions small{display:block;font-size:10px;color:#71858e}
+#perspectiveView{position:absolute;inset:0;width:100%;height:100%;z-index:500;background:#e9f0f3;touch-action:none}#navProgress{display:none}.navigating #navProgress{display:block}.navigating #openRoute{right:120px}.navigating #stopNavigation{display:block;right:12px;top:12px;height:44px;font-size:12px;border-radius:22px}.navigating .leaflet-recordings-pane,.navigating .leaflet-locations-pane{display:none!important}.navigating .leaflet-control-zoom{display:none}.navigating #navProgress{max-width:calc(100% - 160px)}
+@media(min-width:801px){#routeSheet{left:16px;transform:none;bottom:16px}#navBanner{left:50%;transform:translateX(-50%);width:420px;right:auto}.nav-launcher{width:330px;right:auto}.navigating #openRoute{right:auto}#navHint{top:124px}}@media(max-width:400px){#btnFollow{font-size:10px!important;padding:7px!important}#navProgress{max-width:calc(100% - 165px)}.nav-launcher{font-size:13px}}
+</style>
+</head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.19 Navegação GPS</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.20 Navegação limpa</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
-<aside>
+<aside class="clean-drawer" hidden><div class="sheet-heading"><b>Menu do mapa</b><button id="closeMenu" aria-label="Fechar menu">×</button></div>
   <div class="card"><h2>Administração</h2><button id="btnAdmin">Entrar como administrador</button>
   <div id="adminLogin" hidden style="margin-top:10px"><form id="adminForm"><input id="adminEmail" type="email" autocomplete="username" placeholder="E-mail do administrador" required><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Senha" required style="margin-top:8px"><button style="margin-top:8px">Entrar</button></form></div>
   <div id="adminStatus" role="status" style="font-size:12px;margin-top:8px"></div><button id="adminLogout" class="dark" hidden style="margin-top:8px">Sair da conta</button><details style="font-size:12px;margin-top:10px"><summary>Configurar o primeiro administrador</summary><ol><li>No Firebase do projeto mapa-alunorte, ative Authentication → método E-mail/senha e crie sua conta.</li><li>Copie o UID da conta e, no Realtime Database, adicione administradores/SEU_UID com valor booleano true.</li><li>Antes de usar o editor, aplique as regras abaixo na aba Regras do banco. Elas mantêm a colaboração de percursos, pontos e bloqueios e reservam as revisões ao administrador. Se já houver outras regras ou caminhos, faça a integração antes de publicar.</li></ol><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{
@@ -144,10 +152,10 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
 
   <div class="card">
     <h2>Navegação</h2>
-    <label for="origin" style="display:block;font-size:12px;margin:8px 0">Origem</label><input id="searchOrigin" type="search" placeholder="Buscar origem" aria-label="Buscar origem"><select id="origin" aria-label="Origem"><option value="gps">Minha localização (GPS)</option></select><label for="dest" style="display:block;font-size:12px;margin:8px 0">Destino</label><input id="searchDest" type="search" placeholder="Para onde vamos?" aria-label="Buscar destino">
-    <select id="dest" aria-label="Destino"><option value="">Escolha o destino</option></select>
+    <label for="origin" style="display:block;font-size:12px;margin:8px 0">Origem</label><div class="autocomplete"><input id="searchOrigin" type="search" placeholder="Minha localização ou local cadastrado" aria-label="Origem" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="originSuggestions" autocomplete="off"><div id="originSuggestions" class="suggestions" role="listbox" hidden></div></div><select id="origin" aria-label="Origem"><option value="gps">Minha localização (GPS)</option></select><label for="dest" style="display:block;font-size:12px;margin:8px 0">Destino</label><div class="autocomplete"><input id="searchDest" type="search" placeholder="Digite o destino" aria-label="Destino" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="destSuggestions" autocomplete="off"><div id="destSuggestions" class="suggestions" role="listbox" hidden></div></div>
+    <select id="dest" aria-label="Destino"><option value="">Escolha o destino</option><option value="gps">Minha localização (GPS)</option></select>
     <div class="row" style="margin-top:10px">
-      <button id="btnRoute">Calcular rota</button>
+      <button id="btnRoute">Ver trajeto</button><button id="btnStartNavigation" hidden>Iniciar navegação</button>
       <button id="btnClear" class="dark">Limpar</button>
     </div>
     <div id="routeInfo" class="status" style="margin-top:10px">Escolha um destino.</div>
@@ -175,7 +183,7 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
   </div>
 </aside>
 <div id="mapWrap">
-  <div id="map"></div><button id="panelToggle">⌕ Destinos e mapa</button><div id="navBanner" role="status"></div><div class="gps-controls"><button id="btnFollow">◎ Acompanhar posição</button><button id="btnCompass" title="Ativar orientação pela bússola">Bússola</button><button id="btnNorth" title="Mapa orientado ao norte"><span class="compass-face">N<b id="compassArrow">↑</b></span></button><span id="compassText">Direção pelo GPS</span></div><div id="navProgress" role="status"></div>
+  <div id="map"></div><canvas id="perspectiveView" aria-label="Perspectiva das ruas desenhadas" hidden></canvas><button id="openRoute" class="nav-launcher">⌕ Para onde vamos?</button><button id="openMenu" class="nav-menu" aria-label="Abrir menu">☰</button><div id="routeSheet" hidden><div class="sheet-heading"><b>Planejar trajeto</b><button id="closeRoute" aria-label="Fechar planejamento">×</button></div></div><div id="viewMenu" hidden><button data-view="top">Superior · 90°</button><button data-view="tilt">Inclinada · 55°</button><button data-view="driver">Primeira pessoa · vias</button></div><button id="viewToggle" class="view-toggle">Visão ▾</button><button id="stopNavigation" hidden>Encerrar</button><div id="navHint" role="status"></div><button id="panelToggle">⌕ Destinos e mapa</button><div id="navBanner" role="status"></div><div class="gps-controls"><button id="btnFollow">◎ Acompanhar posição</button><button id="btnCompass" title="Ativar orientação pela bússola">Bússola</button><button id="btnNorth" title="Mapa orientado ao norte"><span class="compass-face">N<b id="compassArrow">↑</b></span></button><span id="compassText">Direção pelo GPS</span></div><div id="navProgress" role="status"></div>
   <div id="recordingPill" class="recording-pill"><span class="rec-dot"></span>Gravando novo percurso</div>
   <div id="blockEditor" class="block-editor">
     <b>Definir extensão do bloqueio</b>
@@ -564,7 +572,7 @@ function markerIcon(cat){
 function renderPoints(){
  pointLayers.forEach(x=>map.removeLayer(x));pointLayers=[];
  const origin=document.getElementById("origin"),oldOrigin=origin.value;origin.innerHTML='<option value="gps">Minha localização (GPS)</option>';
- const sel=document.getElementById("dest"), old=sel.value;sel.innerHTML='<option value="">Escolha o destino</option>';
+ const sel=document.getElementById("dest"), old=sel.value;sel.innerHTML='<option value="">Escolha o destino</option><option value="gps">Minha localização (GPS)</option>';
  const list=document.getElementById("pointsList");list.innerHTML="";
  state.points.forEach(p=>{
    const m=L.marker([p.lat,p.lon],{pane:"locationsPane",icon:markerIcon(p.category)}).addTo(map).bindPopup("<b>"+esc(p.name)+"</b><br>"+esc(p.category||"Local"));
@@ -1002,6 +1010,7 @@ function dijkstra(g,start,goal){
  return {path,distance:dist.get(goal)}
 }
 let navigationActive=false,lastRouteUpdate=0;
+const cleanNav={started:false,view:"top",gpsDestination:null,frame:null};
 function route(auto=false){
  if(studio.dirty){document.getElementById("routeInfo").textContent="Salve ou descarte o desenho antes de calcular uma rota.";return}
  gpsNav.path=null;document.getElementById("navProgress").textContent="";
@@ -1010,7 +1019,9 @@ function route(auto=false){
  const originPoint=state.points.find(p=>p.id===originId);
  const start=originId==='gps'?currentPosition:originPoint?[originPoint.lat,originPoint.lon]:null;
  if(!start){document.getElementById("routeInfo").textContent=originId==='gps'?"GPS indisponível. Escolha um local cadastrado como origem.":"Escolha uma origem válida.";return}
- const id=document.getElementById("dest").value,dest=state.points.find(p=>p.id===id);if(!dest){alert("Escolha um destino.");return}
+ const id=document.getElementById("dest").value;
+ if(id==='gps'&&(!auto||!cleanNav.gpsDestination))cleanNav.gpsDestination=currentPosition?{id:'gps',name:'Localização atual',lat:currentPosition[0],lon:currentPosition[1]}:null;
+ const dest=id==='gps'?cleanNav.gpsDestination:state.points.find(p=>p.id===id);if(!dest){document.getElementById("routeInfo").textContent=id==='gps'?"Aguarde o GPS ou escolha um destino cadastrado.":"Escolha uma sugestão de destino.";return}
  const g=graph(),a=g.snap(start),b=g.snap([dest.lat,dest.lon]);
  if(!a||!b){document.getElementById("routeInfo").textContent="Ainda não há ruas desenhadas disponíveis. O administrador precisa desenhar e salvar as ruas.";return}
 
@@ -1021,13 +1032,14 @@ function route(auto=false){
  const routeBlue=L.polyline(coords,{pane:'routePane',color:'#4285f4',weight:8,opacity:1,lineCap:'round',lineJoin:'round',interactive:false});
  routeLayer=L.featureGroup([routeBorder,routeBlue]).addTo(map);if(!auto)map.fitBounds(routeLayer.getBounds(),{paddingTopLeft:[window.innerWidth>800?370:30,95],paddingBottomRight:[35,window.innerWidth>800?45:Math.round(window.innerHeight*.48)]});
  const incomplete=a.d>15||b.d>15;
- navigationActive=originId==='gps'&&!incomplete;lastRouteUpdate=Date.now();
+ navigationActive=cleanNav.started&&originId==='gps'&&a.d<=50;lastRouteUpdate=Date.now();
  setupGpsRoute(coords,dest,routeBorder,routeBlue);
+ document.getElementById("btnStartNavigation").hidden=false;
  const total=r.distance;
  const banner=document.getElementById("navBanner");banner.style.display="block";banner.textContent=(incomplete?"Trecho na malha • ":"➤ ")+dest.name+" • "+distText(total);
  document.getElementById("routeInfo").innerHTML="<b>"+esc(originPoint?originPoint.name:"Minha localização")+" → "+esc(dest.name)+"</b><br>Distância pelas ruas desenhadas: "+distText(total)+"<br>Origem até a rua: "+distText(a.d)+" • Destino até a rua: "+distText(b.d)+(incomplete?"<br><strong>Acesso não mapeado: a linha azul mostra somente o trecho pelas ruas. Desenhe os acessos para completar a rota.</strong>":"")
 }
-function clearRoute(){navigationActive=false;gpsNav.path=null;document.getElementById("navProgress").textContent="";document.getElementById("navBanner").style.display="none";if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("routeInfo").textContent="Escolha um destino."}
+function clearRoute(){if(typeof cleanNav!=="undefined"){cleanNav.started=false;document.body.classList.remove("navigating");document.getElementById("stopNavigation").hidden=true;document.getElementById("btnStartNavigation").hidden=true;setNavigationView("top")}navigationActive=false;gpsNav.path=null;document.getElementById("navProgress").textContent="";document.getElementById("navBanner").style.display="none";if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("routeInfo").textContent="Escolha um destino."}
 function exportMap(){
  const blob=new Blob([JSON.stringify({...state,streetStudio:studioModel(),rawRoads,roadRevisions},null,2)],{type:"application/json"}),a=document.createElement("a");
  a.href=URL.createObjectURL(blob);a.download="mapa-alunorte-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href)
@@ -1198,7 +1210,7 @@ function updateGpsNavigation(p,previous){
  gpsNav.remainingLine.setLatLngs(match.ahead);gpsNav.remainingBorder.setLatLngs(match.ahead);gpsNav.travelledLine.setLatLngs(match.done);
  document.getElementById('navBanner').style.display='block';document.getElementById('navBanner').textContent='➤ '+gpsNav.destination+' • faltam '+distText(match.remaining);
  document.getElementById('navProgress').textContent='Percorrido '+distText(match.travelled)+' • restante '+distText(match.remaining);
- if(match.remaining<12&&gpsNav.destinationGap<20&&hav(position,gpsNav.path[gpsNav.path.length-1])<20){navigationActive=false;document.getElementById('navBanner').textContent='Você chegou • '+gpsNav.destination}
+ if(match.remaining<12&&hav(position,gpsNav.path[gpsNav.path.length-1])<20){navigationActive=false;document.getElementById('navBanner').textContent=gpsNav.destinationGap<20?'Você chegou • '+gpsNav.destination:'Fim da rua mapeada • acesso ao destino não desenhado'}
 }
 function setupGpsRoute(coords,dest,border,blue){gpsNav.path=coords;gpsNav.destination=dest.name;gpsNav.destinationGap=hav(coords[coords.length-1],[dest.lat,dest.lon]);gpsNav.remainingBorder=border;gpsNav.remainingLine=blue;gpsNav.travelledLine=L.polyline([],{pane:'routePane',color:'#819bb7',weight:8,opacity:1,interactive:false,lineCap:'round',lineJoin:'round'});routeLayer.addLayer(gpsNav.travelledLine);document.getElementById('navProgress').textContent=navigationActive?'Trecho percorrido: azul acinzentado • restante: azul vivo':'Prévia da rota • use Minha localização (GPS) como origem para acompanhar';if(navigationActive){gpsNav.follow=true;document.getElementById('btnFollow').textContent='➤ Seguindo posição';if(currentPosition)map.setView(currentPosition,18)}}
 document.getElementById('btnFollow').onclick=()=>{gpsNav.follow=!gpsNav.follow;document.getElementById('btnFollow').textContent=gpsNav.follow?'➤ Seguindo posição':'◎ Acompanhar posição';if(gpsNav.follow){if(currentPosition)map.setView(currentPosition,18);else startGPS()}};
@@ -1209,6 +1221,79 @@ map.on('dragstart',()=>{gpsNav.follow=false;document.getElementById('btnFollow')
 document.getElementById("panelToggle").onclick=()=>{document.querySelector("aside").classList.toggle("folded");setTimeout(()=>map.invalidateSize(),220)};
 document.getElementById("searchDest").oninput=e=>{const q=e.target.value.toLocaleLowerCase();for(const o of document.getElementById("dest").options)o.hidden=!!o.value&&!o.textContent.toLocaleLowerCase().includes(q);for(const el of document.querySelectorAll("#pointsList .item"))el.style.display=el.textContent.toLocaleLowerCase().includes(q)?"":"none"};
 state.recordedCount=state.traces.length;state.drawnRoadIds=[];
+// Navigation planner lives outside the optional tools drawer.
+const plannerCard=document.getElementById('btnRoute').closest('.card');document.getElementById('routeSheet').appendChild(plannerCard);
+function openPlanner(){document.querySelector('aside').hidden=true;document.getElementById('viewMenu').hidden=true;document.getElementById('routeSheet').hidden=false;document.getElementById('searchDest').focus()}
+function closePlanner(){document.getElementById('routeSheet').hidden=true;document.querySelectorAll('.suggestions').forEach(el=>el.hidden=true)}
+document.getElementById('openRoute').onclick=openPlanner;
+document.getElementById('closeRoute').onclick=closePlanner;
+document.getElementById('openMenu').onclick=()=>{closePlanner();document.querySelector('aside').hidden=false};
+document.getElementById('closeMenu').onclick=()=>document.querySelector('aside').hidden=true;
+document.getElementById('viewToggle').onclick=()=>document.getElementById('viewMenu').hidden=!document.getElementById('viewMenu').hidden;
+function normalizedName(text){return String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function matchingPlaces(query,points){const q=normalizedName(query);return points.filter(p=>!q||normalizedName(p.name).includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).slice(0,12)}
+function chooseEndpoint(kind,id,name){const select=document.getElementById(kind),input=document.getElementById(kind==='origin'?'searchOrigin':'searchDest');select.value=id;input.value=name;input.dataset.chosen=id;input.setAttribute('aria-expanded','false');document.getElementById(kind+'Suggestions').hidden=true;clearRoute();if(kind==='dest'&&id==='gps'&&!currentPosition){document.getElementById('routeInfo').textContent='Ative a localização para usar este destino.';startGPS()}}
+for(const kind of ['origin','dest']){
+ const input=document.getElementById(kind==='origin'?'searchOrigin':'searchDest'),list=document.getElementById(kind+'Suggestions');
+ const suggest=()=>{list.innerHTML='';list.hidden=false;input.setAttribute('aria-expanded','true');const options=[{id:'gps',name:'Minha localização (GPS)',category:'Usar localização atual'},...matchingPlaces(input.value,state.points)];for(const p of options){const b=document.createElement('button');b.type='button';b.setAttribute('role','option');b.textContent=p.id==='gps'?'◎ '+p.name:p.name;const small=document.createElement('small');small.textContent=p.category||'Local cadastrado';b.appendChild(small);b.onclick=()=>chooseEndpoint(kind,p.id,p.name);list.appendChild(b)}};
+ input.onfocus=suggest;input.oninput=()=>{document.getElementById(kind).value='';delete input.dataset.chosen;clearRoute();suggest()};input.onkeydown=e=>{if(e.key==='ArrowDown'){e.preventDefault();list.querySelector('button')?.focus()}if(e.key==='Escape'){list.hidden=true;input.setAttribute('aria-expanded','false')}if(e.key==='Enter'){e.preventDefault();const matches=matchingPlaces(input.value,state.points);if(matches.length===1)chooseEndpoint(kind,matches[0].id,matches[0].name)}};
+ list.onkeydown=e=>{const b=[...list.querySelectorAll('button')],i=b.indexOf(document.activeElement);if(e.key==='ArrowDown'){e.preventDefault();b[(i+1)%b.length]?.focus()}if(e.key==='ArrowUp'){e.preventDefault();b[(i+b.length-1)%b.length]?.focus()}if(e.key==='Escape'){list.hidden=true;input.focus()}};
+}
+document.getElementById('searchOrigin').value='Minha localização (GPS)';document.getElementById('searchOrigin').dataset.chosen='gps';
+function startCleanNavigation(){
+ if(studio.dirty){document.getElementById('routeInfo').textContent='Salve ou descarte a edição antes de navegar.';return}
+ if(!currentPosition){document.getElementById('routeInfo').textContent='Ative sua localização para iniciar a navegação.';startGPS();return}
+ document.getElementById('origin').value='gps';document.getElementById('searchOrigin').value='Minha localização (GPS)';cleanNav.started=true;route(false);
+ if(!gpsNav.path){cleanNav.started=false;return}
+ if(!navigationActive){cleanNav.started=false;document.getElementById('routeInfo').textContent+=' A navegação GPS precisa de acesso mapeado próximo da origem e do destino.';return}
+ document.body.classList.add('navigating');document.getElementById('stopNavigation').hidden=false;closePlanner();gpsNav.follow=true;document.getElementById('btnFollow').textContent='◎ Recentralizar';setNavigationView('tilt');
+}
+document.getElementById('btnStartNavigation').onclick=startCleanNavigation;
+document.getElementById('stopNavigation').onclick=()=>{clearRoute();document.getElementById('navHint').textContent='';openPlanner()};
+function setNavigationView(mode){
+ cleanNav.view=mode;const perspective=mode!=='top';document.getElementById('perspectiveView').hidden=!perspective;document.getElementById('viewMenu').hidden=true;document.getElementById('viewToggle').textContent=mode==='top'?'Superior ▾':mode==='tilt'?'Inclinada ▾':'Primeira pessoa ▾';document.getElementById('navHint').textContent=perspective?'Perspectiva das ruas desenhadas • sem imagens 3D de edifícios':'';
+ if(perspective)requestPerspective();else map.invalidateSize();
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setNavigationView(b.dataset.view));
+function perspectiveProject(point,camera){
+ const r=Math.PI/180,dx=(point[1]-camera.center[1])*111320*Math.cos(camera.center[0]*r),dy=(point[0]-camera.center[0])*111320;
+ const x=dx*Math.cos(camera.yaw)-dy*Math.sin(camera.yaw),forward=dx*Math.sin(camera.yaw)+dy*Math.cos(camera.yaw)+camera.back;
+ const depth=forward*Math.cos(camera.pitch)+camera.height*Math.sin(camera.pitch),vertical=forward*Math.sin(camera.pitch)-camera.height*Math.cos(camera.pitch);
+ return {x:camera.width/2+x*camera.focal/depth,y:camera.horizon-vertical*camera.focal/depth,depth};
+}
+function requestPerspective(){if(cleanNav.view==='top'||cleanNav.frame)return;cleanNav.frame=requestAnimationFrame(()=>{cleanNav.frame=null;drawPerspective()})}
+function projectedSegment(a,b,camera){
+ let pa=perspectiveProject(a,camera),pb=perspectiveProject(b,camera);const near=2;if(pa.depth<near&&pb.depth<near)return null;
+ if(pa.depth<near){const t=(near-pa.depth)/(pb.depth-pa.depth);a=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];pa=perspectiveProject(a,camera)}
+ if(pb.depth<near){const t=(near-pb.depth)/(pa.depth-pb.depth);b=[b[0]+(a[0]-b[0])*t,b[1]+(a[1]-b[1])*t];pb=perspectiveProject(b,camera)}return {a:pa,b:pb,depth:(pa.depth+pb.depth)/2};
+}
+function drawPerspective(){
+ if(cleanNav.view==='top')return;const canvas=document.getElementById('perspectiveView'),rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*ratio);canvas.height=Math.round(rect.height*ratio);const ctx=canvas.getContext('2d');ctx.scale(ratio,ratio);const w=rect.width,h=rect.height;
+ let center=currentPosition;if(!center&&gpsNav.path?.length)center=gpsNav.path[0];if(!center){const p=map.getCenter();center=[p.lat,p.lng]}
+ const yaw=(cleanNav.started?gpsNav.heading:gpsNav.path?.length>1?courseBetween(gpsNav.path[0],gpsNav.path[1]):gpsNav.heading)*Math.PI/180;
+ const driver=cleanNav.view==='driver',camera={center,yaw,pitch:(driver?10:55)*Math.PI/180,height:driver?3:95,back:driver?9:60,width:w,horizon:h*(driver?.43:.30),focal:Math.min(w,h)*1.05};
+ ctx.fillStyle='#edf3f6';ctx.fillRect(0,0,w,h);if(driver){const sky=ctx.createLinearGradient(0,0,0,h*.45);sky.addColorStop(0,'#cde7f7');sky.addColorStop(1,'#f0f6f9');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h*.43)}
+ const segments=[];for(const road of Object.values(studio.roads)){const coords=studioGeometry(road);for(let i=1;i<coords.length;i++){const seg=projectedSegment(coords[i-1],coords[i],camera);if(seg)segments.push(seg)}}
+ segments.sort((a,b)=>b.depth-a.depth);
+ const stroke=(a,b,color,width)=>{if(!Number.isFinite(a.x+b.x+a.y+b.y)||Math.max(Math.abs(a.x),Math.abs(a.y),Math.abs(b.x),Math.abs(b.y))>100000)return;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()};
+ for(const seg of segments){const width=Math.min(95,Math.max(2,7*camera.focal/seg.depth));stroke(seg.a,seg.b,'#9aabb5',width+3);stroke(seg.a,seg.b,'#fff',width)}
+ const routeStroke=(coords,color)=>{for(let i=1;i<coords.length;i++){const seg=projectedSegment(coords[i-1],coords[i],camera);if(seg)stroke(seg.a,seg.b,color,Math.min(45,Math.max(3,3*camera.focal/seg.depth)))}};
+ if(gpsNav.path){const match=currentPosition&&cleanNav.started?splitRouteProgress(gpsNav.path,currentPosition):null;if(match){routeStroke(match.done,'#819bb7');routeStroke(match.ahead,'#4285f4')}else routeStroke(gpsNav.path,'#4285f4')}
+ const user=perspectiveProject(center,camera);ctx.save();ctx.translate(w/2,Math.min(h-100,user.y));ctx.fillStyle='#1769e0';ctx.strokeStyle='white';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(13,15);ctx.lineTo(0,8);ctx.lineTo(-13,15);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+ ctx.fillStyle='#526976';ctx.font='11px Arial';ctx.textAlign='center';ctx.fillText(driver?'Perspectiva próxima ao solo':'Vista inclinada das vias',w/2,h-72);
+}
+const originalUpdateGpsNavigation=updateGpsNavigation;updateGpsNavigation=function(p,previous){originalUpdateGpsNavigation(p,previous);requestPerspective()};
+const originalUpdateCompass=updateCompass;updateCompass=function(heading){originalUpdateCompass(heading);requestPerspective()};
+const originalSetupGpsRoute=setupGpsRoute;setupGpsRoute=function(...args){originalSetupGpsRoute(...args);requestPerspective()};
+const originalRebuildRoads=rebuildRoads;rebuildRoads=function(){originalRebuildRoads();requestPerspective()};
+const originalStudioTool=setStudioTool;setStudioTool=function(tool){if(cleanNav.view!=='top')setNavigationView('top');originalStudioTool(tool);if(canDraw())document.querySelector('aside').hidden=true};
+map.on('moveend zoomend',requestPerspective);window.addEventListener('resize',requestPerspective);
+document.getElementById('btnNorth').onclick=()=>{setNavigationView('top');if(currentPosition)map.panTo(currentPosition)};
+// Existing editing buttons remain available inside expandable menu sections.
+for(const card of [...document.querySelectorAll('aside > .card')]){const title=card.querySelector('h2');if(!title)continue;const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=title.textContent;summary.style.cssText='font-weight:700;padding:8px;cursor:pointer';title.remove();card.replaceWith(details);details.append(summary,card)}
+document.querySelector('aside').hidden=true;document.getElementById('routeSheet').hidden=true;
+showLocations=false;studio.showRecorded=false;document.getElementById('showLocations').checked=false;document.getElementById('showRecorded').checked=false;map.getPane('locationsPane').style.display='none';updateVisibilityStatus();
+
 renderAll();
 renderRecordUsers();
 updateRecordingUi();
@@ -1219,6 +1304,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 
