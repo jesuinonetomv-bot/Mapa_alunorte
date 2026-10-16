@@ -96,7 +96,7 @@ aside{position:absolute;left:16px;top:16px;width:330px;max-height:calc(100% - 32
 </style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.17 Cálculo de rotas</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.18 Trajeto em azul</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -270,6 +270,7 @@ const STORAGE_KEY = "mapa_alunorte_v05";
 const map=L.map("map",{zoomControl:false});
 map.createPane('recordingsPane');map.getPane('recordingsPane').style.zIndex=410;
 map.createPane('drawnPane');map.getPane('drawnPane').style.zIndex=420;
+map.createPane('routePane');map.getPane('routePane').style.zIndex=450;map.getPane('routePane').style.pointerEvents='none';
 map.createPane('locationsPane');map.getPane('locationsPane').style.zIndex=600;
 let showDrawn=true,showLocations=true;
 
@@ -1010,7 +1011,9 @@ function route(auto=false){
  const r=dijkstra(g,a.k,b.k);if(!r){document.getElementById("routeInfo").textContent="Não existe ligação pelas ruas desenhadas. Confira os cruzamentos, os acessos e os bloqueios.";return}
  const coords=r.path.map(k=>g.get(k).p);
  if(routeLayer)map.removeLayer(routeLayer);
- routeLayer=L.polyline(coords,{color:"#00a9ed",weight:8,opacity:.95}).addTo(map);if(!auto)map.fitBounds(routeLayer.getBounds(),{padding:[45,45]});
+ const routeBorder=L.polyline(coords,{pane:'routePane',color:'#1556b3',weight:13,opacity:1,lineCap:'round',lineJoin:'round',interactive:false});
+ const routeBlue=L.polyline(coords,{pane:'routePane',color:'#4285f4',weight:8,opacity:1,lineCap:'round',lineJoin:'round',interactive:false});
+ routeLayer=L.featureGroup([routeBorder,routeBlue]).addTo(map);if(!auto)map.fitBounds(routeLayer.getBounds(),{paddingTopLeft:[window.innerWidth>800?370:30,95],paddingBottomRight:[35,window.innerWidth>800?45:Math.round(window.innerHeight*.48)]});
  const incomplete=a.d>15||b.d>15;
  navigationActive=originId==='gps'&&!incomplete;lastRouteUpdate=Date.now();
  const total=r.distance;
@@ -1182,6 +1185,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 
