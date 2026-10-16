@@ -105,10 +105,10 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
 </style>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css"><style>
 #perspectiveMap{position:absolute;inset:0;z-index:500;width:100%;height:100%;background:#e8ece7}.perspective-mode .leaflet-control-zoom{display:none}.maplibregl-ctrl-attrib{font-size:9px!important}.navigation-location{width:46px;height:46px;filter:drop-shadow(0 3px 4px #1235)}.navigation-destination{background:white;color:#315ded;border:3px solid #315ded;border-radius:50%;font-size:23px;width:36px;height:36px;text-align:center;line-height:29px}.turn-banner{display:flex!important;align-items:center;gap:14px;text-align:left!important;background:#173a4a!important;padding:14px 18px!important}.turn-banner .turn-arrow{font-size:38px;line-height:1;color:white}.turn-banner b{display:block;font-size:17px;line-height:1.3}.turn-banner small{display:block;margin-top:5px;font-size:12px;color:#d6e7ef}#navHint{top:145px;background:#ffffffeb;border-radius:12px;padding:5px;font-size:11px}.perspective-mode #navHint:empty{display:none}
-</style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style></head>
+</style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style><style>body.editing-block .map-actions{display:none}.block-editor.on{bottom:12px;width:min(420px,calc(100% - 24px));min-width:0;box-sizing:border-box;z-index:1700}.block-editor input{width:100%;box-sizing:border-box}.block-editor label{text-align:left;font-size:12px}</style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.24 Menu simplificado</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.25 Bloqueios precisos</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -178,7 +178,9 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
   <div id="recordingPill" class="recording-pill"><span class="rec-dot"></span>Gravando novo percurso</div>
   <div id="blockEditor" class="block-editor">
     <b>Definir extensão do bloqueio</b>
-    <div style="font-size:12px;color:#6c7780;margin-bottom:8px">Arraste os dois marcadores vermelhos pela via.</div>
+    <div style="font-size:12px;color:#6c7780;margin-bottom:8px">Arraste INÍCIO e FIM em qualquer ponto da rua ou informe as distâncias desde o começo dela.</div>
+    <div class="row"><label style="flex:1">Início (m)<input id="blockFromMeters" type="number" min="0" step="0.1" inputmode="decimal"></label><label style="flex:1">Fim (m)<input id="blockToMeters" type="number" min="0" step="0.1" inputmode="decimal"></label></div>
+    <div id="blockLength" role="status" style="margin:8px 0;font-weight:700"></div>
     <div class="row">
       <button id="btnConfirmBlock" class="danger">Confirmar bloqueio</button>
       <button id="btnCancelBlock" class="dark">Cancelar</button>
@@ -281,7 +283,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,att
 
 let state=loadState(), currentPosition=null, gpsMarker=null, accuracyLayer=null;
 let watchId=null, recording=false, activeTraceIndex=null, routeLayer=null, blockMode=false;
-let blockStartMarker=null, blockEndMarker=null, blockPreviewLayer=null, blockTraceIndex=null;
+let blockStartMarker=null, blockEndMarker=null, blockPreviewLayer=null, blockTraceIndex=null, editingBlockGroup=null, blockSaving=false;
 let roadLayers=[], pointLayers=[];
 
 function defaults(){return {traces:[SEED_TRACK],points:SEED_POINTS,blockedEdges:[]}}
@@ -294,7 +296,13 @@ function hav(a,b){
  return 2*R*Math.asin(Math.sqrt(x))
 }
 function edgeId(ti,pi){return state.recordedCount!==undefined&&ti>=state.recordedCount?"draw:"+state.drawnRoadIds[ti-state.recordedCount]+":"+pi:ti+":"+pi}
-function blocked(ti,pi){return state.blockedEdges.some(b=>b.id===edgeId(ti,pi))}
+function blockIntervals(ti,pi){
+ const ranges=state.blockedEdges.filter(b=>b.id===edgeId(ti,pi)).map(b=>[Number.isFinite(b.t0)?Math.max(0,Math.min(1,b.t0)):0,Number.isFinite(b.t1)?Math.max(0,Math.min(1,b.t1)):1]).filter(r=>r[1]>r[0]).sort((a,b)=>a[0]-b[0]);
+ const merged=[];for(const r of ranges){const last=merged[merged.length-1];if(last&&r[0]<=last[1]+1e-9)last[1]=Math.max(last[1],r[1]);else merged.push(r.slice())}return merged;
+}
+function blocked(ti,pi){return blockIntervals(ti,pi).length>0}
+function interpolateRoad(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]}
+function blockedPieces(ti,pi){const t=state.traces[ti];return blockIntervals(ti,pi).map(([a,b])=>[interpolateRoad(t[pi],t[pi+1],a),interpolateRoad(t[pi],t[pi+1],b)])}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function distText(m){return m<1000?Math.round(m)+" m":(m/1000).toFixed(2).replace(".",",")+" km"}
 
@@ -551,7 +559,7 @@ function renderRoads(){
    for(let i=0;i<t.length-1;i++){
      const isB=blocked(ti,i);
      const l=L.polyline([t[i],t[i+1]],{pane:"recordingsPane",color:isB?"#b95946":"#8c9fa9",weight:isB?7:3,opacity:.65,dashArray:isB?"10 7":null}).addTo(map);
-     l.on("click",e=>{if(studio.tool!=="select"){handleStudioClick(e);return}if(editor.active){selectEditRoad(ti);return}if(blockMode && !blockStartMarker)beginBlockRange(ti,i)});
+     l.on("click",e=>{if(studio.tool!=="select"){handleStudioClick(e);return}if(editor.active){selectEditRoad(ti);return}if(blockMode && !blockStartMarker)beginBlockRange(ti,i,e.latlng)});
      roadLayers.push(l)
    }
  })
@@ -599,12 +607,13 @@ function renderBlocks(){
    d.innerHTML=
      "<b>⛔ Via bloqueada</b>"+
      "<span class='badge'>"+qtd+" trecho"+(qtd>1?"s":"")+"</span>"+
-     "<span class='badge'>Toque para remover</span><br>"+
+     "<br>"+
      "<span style='font-size:11px'>"+
      (b.createdAt ? new Date(b.createdAt).toLocaleString() : "Bloqueio ativo")+
      "</span>";
 
-   d.onclick=async ()=>{
+   const remove=document.createElement("button");remove.className="danger";remove.textContent="Remover";
+   remove.onclick=async ()=>{
      if(!confirm("Deseja retirar todo este bloqueio da via?")) return;
 
      try{
@@ -613,9 +622,8 @@ function renderBlocks(){
          document.getElementById("firebaseStatus").textContent=
            "Bloqueio removido • mapa atualizado para todos";
        }else{
-         const ids=new Set(group.items.map(x=>x.id));
-         state.blockedEdges=state.blockedEdges.filter(x=>!ids.has(x.id));
-         save();
+         state.blockedEdges=state.blockedEdges.filter(x=>!group.items.includes(x));
+         save();if(routeLayer)route(true);requestPerspective();
        }
      }catch(e){
        console.error(e);
@@ -623,6 +631,9 @@ function renderBlocks(){
      }
    };
 
+   const adjust=document.createElement('button');adjust.textContent='Ajustar início e fim';
+   adjust.onclick=()=>{if(studio.dirty||editor.active){alert('Finalize a edição das ruas primeiro.');return}const match=String(b.id).match(/^draw:(.*):(\d+)$/);const ti=match?state.recordedCount+state.drawnRoadIds.indexOf(match[1]):b.ti;if(ti<state.recordedCount||!state.traces[ti]){alert('Este bloqueio pertence a um percurso antigo. Remova-o e crie um bloqueio na rua desenhada.');return}beginBlockRange(ti,b.pi,null,group)};
+   const actions=document.createElement('div');actions.className='row';actions.style.marginTop='8px';actions.append(adjust,remove);d.appendChild(actions);
    list.appendChild(d);
  });
 }
@@ -695,6 +706,7 @@ function startFirebaseListeners(){
          id:ed.edgeId,
          ti:ed.ti,
          pi:ed.pi,
+         t0:ed.t0,t1:ed.t1,
          createdAt:x.createdAt||new Date().toISOString(),
          uid:x.uid||null,
          range:true,
@@ -714,8 +726,8 @@ function startFirebaseListeners(){
        });
      }
    });
-   state.blockedEdges=expanded;
-   renderAll();renderStudio();
+   const changed=JSON.stringify(state.blockedEdges)!==JSON.stringify(expanded);state.blockedEdges=expanded;
+   renderAll();renderStudio();if(changed&&routeLayer)route(true);requestPerspective();
  });
 }
 
@@ -825,139 +837,80 @@ function makeBlockHandle(latlng,label){
  return m;
 }
 
+function traceMeasures(ti){const trace=state.traces[ti],at=[0];for(let i=1;i<trace.length;i++)at.push(at[i-1]+hav(trace[i-1],trace[i]));return at}
+function pointAtDistance(ti,distance){const trace=state.traces[ti],at=traceMeasures(ti);const d=Math.max(0,Math.min(at[at.length-1],distance));let pi=0;while(pi<trace.length-2&&at[pi+1]<d)pi++;const t=(d-at[pi])/(at[pi+1]-at[pi]||1);return {pi,t,p:interpolateRoad(trace[pi],trace[pi+1],t),distance:d}}
 function snapBlockMarker(marker){
- const n=nearestRoadNode(marker.getLatLng(),blockTraceIndex);
- if(!n) return null;
- marker.setLatLng(n.p);
- return n;
+ const trace=state.traces[blockTraceIndex],at=traceMeasures(blockTraceIndex),pos=marker.getLatLng();let best=null;
+ for(let pi=0;pi<trace.length-1;pi++){const q=project([pos.lat,pos.lng],trace[pi],trace[pi+1]);if(!best||q.d<best.d)best={...q,pi,distance:at[pi]+q.t*(at[pi+1]-at[pi])}}
+ if(best)marker.setLatLng(best.p);return best;
 }
-
+function blockSelection(){
+ const a=snapBlockMarker(blockStartMarker),b=snapBlockMarker(blockEndMarker);if(a.distance<=b.distance)return [a,b];[blockStartMarker,blockEndMarker]=[blockEndMarker,blockStartMarker];blockStartMarker.setTooltipContent('INÍCIO');blockEndMarker.setTooltipContent('FIM');return [b,a];
+}
 function updateBlockPreview(){
- if(!blockStartMarker || !blockEndMarker || blockTraceIndex===null) return;
- const a=snapBlockMarker(blockStartMarker);
- const b=snapBlockMarker(blockEndMarker);
- if(!a || !b) return;
-
- const trace=state.traces[blockTraceIndex];
- const from=Math.min(a.pi,b.pi);
- const to=Math.max(a.pi,b.pi);
-
- if(blockPreviewLayer) map.removeLayer(blockPreviewLayer);
- const coords=trace.slice(from,to+1);
- if(coords.length>=2){
-   blockPreviewLayer=L.polyline(coords,{
-     color:"#b95946",weight:10,opacity:.65,dashArray:"12 8"
-   }).addTo(map);
- }
+ if(!blockStartMarker||!blockEndMarker||blockTraceIndex===null)return;
+ const [a,b]=blockSelection(),trace=state.traces[blockTraceIndex],coords=[a.p];
+ for(let i=a.pi+1;i<=b.pi;i++)coords.push(trace[i]);coords.push(b.p);
+ if(blockPreviewLayer)map.removeLayer(blockPreviewLayer);
+ blockPreviewLayer=L.polyline(coords,{pane:'routePane',color:'#ed615b',weight:10,opacity:.85,dashArray:'8 6',interactive:false}).addTo(map);
+ const total=traceMeasures(blockTraceIndex).slice(-1)[0];
+ for(const [id,n] of [['blockFromMeters',a.distance],['blockToMeters',b.distance]]){const input=document.getElementById(id);input.max=total.toFixed(1);if(document.activeElement!==input)input.value=n.toFixed(1)}
+ document.getElementById('blockLength').textContent='Extensão bloqueada: '+(b.distance-a.distance).toFixed(1).replace('.',',')+' m';
 }
-
+function setBlockDistance(which,value){if(!Number.isFinite(value)||blockTraceIndex===null)return;const marker=which==='start'?blockStartMarker:blockEndMarker;marker.setLatLng(pointAtDistance(blockTraceIndex,value).p);updateBlockPreview()}
 function clearBlockEditor(){
- if(blockStartMarker){map.removeLayer(blockStartMarker);blockStartMarker=null}
- if(blockEndMarker){map.removeLayer(blockEndMarker);blockEndMarker=null}
- if(blockPreviewLayer){map.removeLayer(blockPreviewLayer);blockPreviewLayer=null}
- blockTraceIndex=null;
- blockMode=false;
- document.getElementById("blockEditor").classList.remove("on");
- document.getElementById("btnBlock").textContent="Adicionar bloqueio";
- document.getElementById("btnMapBlock").textContent="⛔ Adicionar bloqueio";
+ if(blockSaving)return;
+ for(const layer of [blockStartMarker,blockEndMarker,blockPreviewLayer])if(layer)map.removeLayer(layer);
+ blockStartMarker=null;blockEndMarker=null;blockPreviewLayer=null;blockTraceIndex=null;editingBlockGroup=null;blockMode=false;
+ document.body.classList.remove('editing-block');document.getElementById('blockEditor').classList.remove('on');
+ document.getElementById('btnBlock').textContent='Adicionar bloqueio';document.getElementById('btnMapBlock').textContent='⛔ Adicionar bloqueio';
 }
-
 function startBlock(){
- if(studio.dirty||studio.tool!=="select"){studioStatus("Salve ou descarte o desenho antes de bloquear ruas.");return}
- if(editor.active){editMessage("Finalize a edição das ruas antes de bloquear.");return}
- blockMode=true;
- document.getElementById("btnBlock").textContent="Toque na rua...";
- document.getElementById("btnMapBlock").textContent="Toque na rua...";
- document.getElementById("routeInfo").textContent=
-   "Modo bloqueio: toque aproximadamente no centro da via interditada.";
+ if(studio.dirty||studio.tool!=='select'){studioStatus('Salve ou descarte o desenho antes de bloquear ruas.');return}
+ if(editor.active){editMessage('Finalize a edição das ruas antes de bloquear.');return}
+ clearBlockEditor();setNavigationView('top');document.querySelector('aside').hidden=true;document.getElementById('routeSheet').hidden=true;
+ blockMode=true;document.getElementById('btnBlock').textContent='Toque na rua…';document.getElementById('btnMapBlock').textContent='Toque na rua…';
+ document.getElementById('navHint').textContent='Toque na rua para definir o início e o fim do bloqueio.';
 }
-
-async function beginBlockRange(ti,pi){
- const trace=state.traces[ti];
- if(!trace || trace.length<2) return;
-
- blockTraceIndex=ti;
- const startPi=Math.max(0,pi);
- const endPi=Math.min(trace.length-1,pi+1);
-
- blockStartMarker=makeBlockHandle(trace[startPi],"INÍCIO");
- blockEndMarker=makeBlockHandle(trace[endPi],"FIM");
-
- blockStartMarker.on("drag",updateBlockPreview);
- blockEndMarker.on("drag",updateBlockPreview);
- blockStartMarker.on("dragend",updateBlockPreview);
- blockEndMarker.on("dragend",updateBlockPreview);
-
- document.getElementById("blockEditor").classList.add("on");
- document.getElementById("routeInfo").textContent=
-   "Arraste INÍCIO e FIM para definir a extensão do bloqueio.";
- updateBlockPreview();
+function beginBlockRange(ti,pi,position=null,group=null){
+ if(blockSaving)return;
+ const trace=state.traces[ti];if(!trace||trace.length<2||ti<state.recordedCount)return;
+ clearBlockEditor();blockMode=true;blockTraceIndex=ti;editingBlockGroup=group;
+ let from,to;const at=traceMeasures(ti);
+ if(group){const edges=group.items.filter(b=>b.id===edgeId(ti,b.pi));if(!edges.length){clearBlockEditor();return}from=Math.min(...edges.map(b=>at[b.pi]+(b.t0??0)*(at[b.pi+1]-at[b.pi])));to=Math.max(...edges.map(b=>at[b.pi]+(b.t1??1)*(at[b.pi+1]-at[b.pi])))}
+ else{const p=position?[position.lat,position.lng]:trace[pi];let near={d:Infinity};for(let i=0;i<trace.length-1;i++){const q=project(p,trace[i],trace[i+1]);if(q.d<near.d)near={...q,distance:at[i]+q.t*(at[i+1]-at[i])}}from=Math.max(0,near.distance-10);to=Math.min(at[at.length-1],near.distance+10)}
+ blockStartMarker=makeBlockHandle(pointAtDistance(ti,from).p,'INÍCIO');blockEndMarker=makeBlockHandle(pointAtDistance(ti,to).p,'FIM');
+ for(const marker of [blockStartMarker,blockEndMarker]){marker.on('drag',updateBlockPreview);marker.on('dragend',updateBlockPreview)}
+ setNavigationView('top');document.querySelector('aside').hidden=true;document.getElementById('routeSheet').hidden=true;document.getElementById('navHint').textContent='';
+ document.body.classList.add('editing-block');document.getElementById('blockEditor').classList.add('on');
+ document.getElementById('btnConfirmBlock').textContent=group?'Salvar ajuste':'Confirmar bloqueio';
+ updateBlockPreview();map.fitBounds(L.latLngBounds([blockStartMarker.getLatLng(),blockEndMarker.getLatLng()]).pad(.8),{maxZoom:21,paddingTopLeft:[35,90],paddingBottomRight:[35,240]});
 }
-
 async function confirmBlockRange(){
- if(!blockStartMarker || !blockEndMarker || blockTraceIndex===null) return;
-
- const a=snapBlockMarker(blockStartMarker);
- const b=snapBlockMarker(blockEndMarker);
- if(!a || !b) return;
-
- const from=Math.min(a.pi,b.pi);
- const to=Math.max(a.pi,b.pi);
-
- if(to<=from){
-   alert("Defina uma extensão maior para o bloqueio.");
-   return;
- }
-
- const edges=[];
- for(let pi=from;pi<to;pi++){
-   edges.push({edgeId:edgeId(blockTraceIndex,pi),ti:blockTraceIndex,pi});
- }
-
+ if(blockSaving||!blockStartMarker||!blockEndMarker||blockTraceIndex===null)return;
+ const [a,b]=blockSelection();if(b.distance-a.distance<.5){alert('Defina ao menos 0,5 m de bloqueio.');return}
+ const trace=state.traces[blockTraceIndex],edges=[];
+ for(let pi=a.pi;pi<=b.pi;pi++){const t0=pi===a.pi?a.t:0,t1=pi===b.pi?b.t:1;if(t1-t0>1e-9)edges.push({edgeId:edgeId(blockTraceIndex,pi),ti:blockTraceIndex,pi,t0,t1})}
+ const group=editingBlockGroup,payload={type:'precise-range',traceIndex:blockTraceIndex,fromPi:a.pi,toPi:b.pi,fromMeters:a.distance,toMeters:b.distance,edges,createdAt:group?.sample.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+ blockSaving=true;document.getElementById('btnConfirmBlock').disabled=true;document.getElementById('btnCancelBlock').disabled=true;
+ try{
  if(firebaseReady()){
-   try{
-     const f=window.fbMap;
-     const r=f.push(f.ref(f.db,"mapa/bloqueios"));
-     await f.set(r,{
-       type:"range",
-       traceIndex:blockTraceIndex,
-       fromPi:from,
-       toPi:to,
-       edges,
-       uid:f.uid,
-       createdAt:new Date().toISOString()
-     });
-     document.getElementById("firebaseStatus").textContent=
-       "Bloqueio por extensão enviado • mapa atualizado para todos";
-   }catch(e){
-     console.error(e);
-     edges.forEach(ed=>{
-       if(!state.blockedEdges.some(x=>x.id===ed.edgeId)){
-         state.blockedEdges.push({
-           id:ed.edgeId,ti:ed.ti,pi:ed.pi,
-           createdAt:new Date().toISOString(),
-           localGroup:"local-"+Date.now()
-         });
-       }
-     });
-     save();
-   }
+  const f=window.fbMap,r=group?.sample.firebaseId?f.ref(f.db,'mapa/bloqueios/'+group.sample.firebaseId):f.push(f.ref(f.db,'mapa/bloqueios'));
+  await f.set(r,{...payload,uid:f.uid});document.getElementById('firebaseStatus').textContent='Bloqueio preciso atualizado para todos';
+  if(group&&!group.sample.firebaseId)state.blockedEdges=state.blockedEdges.filter(x=>!group.items.includes(x));
  }else{
-   edges.forEach(ed=>{
-     if(!state.blockedEdges.some(x=>x.id===ed.edgeId)){
-       state.blockedEdges.push({
-         id:ed.edgeId,ti:ed.ti,pi:ed.pi,
-         createdAt:new Date().toISOString(),
-         localGroup:"local-"+Date.now()
-       });
-     }
-   });
-   save();
+  if(group?.sample.firebaseId)throw new Error('Conecte-se à internet para ajustar este bloqueio compartilhado.');
+  if(group)state.blockedEdges=state.blockedEdges.filter(x=>!group.items.includes(x));
+  const localGroup=group?.sample.localGroup||'local-'+Date.now();
+  edges.forEach(ed=>state.blockedEdges.push({id:ed.edgeId,ti:ed.ti,pi:ed.pi,t0:ed.t0,t1:ed.t1,createdAt:payload.createdAt,localGroup}));save();if(routeLayer)route(true);
+  document.getElementById('firebaseStatus').textContent='Bloqueio salvo somente neste aparelho';
  }
-
- clearBlockEditor();
+ blockSaving=false;clearBlockEditor();requestPerspective();
+ }catch(e){alert('Não foi possível salvar o bloqueio. '+(e.message||'Tente novamente.'));}
+ finally{blockSaving=false;document.getElementById('btnConfirmBlock').disabled=false;document.getElementById('btnCancelBlock').disabled=false}
 }
-
+document.getElementById('blockFromMeters').onchange=e=>setBlockDistance('start',Number(e.target.value));
+document.getElementById('blockToMeters').onchange=e=>setBlockDistance('end',Number(e.target.value));
 
 function key(ti,pi){return ti+","+pi}
 function project(p,a,b){
@@ -966,18 +919,27 @@ function project(p,a,b){
  const q=[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])];return {t,p:q,d:hav(p,q)};
 }
 function graph(){
- const g=new Map(),segments=[],joins=[];
+ const g=new Map(),segments=[],joins=[];let cutSequence=0;
  const add=(k,p)=>{if(!g.has(k))g.set(k,{p,edges:[]})};
  const link=(a,b)=>{if(a===b)return;const w=hav(g.get(a).p,g.get(b).p);g.get(a).edges.push({to:b,w});g.get(b).edges.push({to:a,w})};
- state.traces.forEach((t,ti)=>{if(ti<state.recordedCount||ti>=state.recordedCount+state.drawnRoadIds.length)return;t.forEach((p,pi)=>add(key(ti,pi),p));for(let pi=0;pi<t.length-1;pi++)segments.push({ti,pi,a:t[pi],b:t[pi+1],blocked:blocked(ti,pi),cuts:[{t:0,k:key(ti,pi)},{t:1,k:key(ti,pi+1)}]})});
- const cut=(seg,t,p)=>{const old=seg.cuts.find(x=>Math.abs(x.t-t)<1e-8);if(old)return old.k;const k='s'+seg.ti+':'+seg.pi+':'+seg.cuts.length;add(k,p);seg.cuts.push({t,k});return k};
+ state.traces.forEach((t,ti)=>{if(ti<state.recordedCount||ti>=state.recordedCount+state.drawnRoadIds.length)return;t.forEach((p,pi)=>add(key(ti,pi),p));
+ for(let pi=0;pi<t.length-1;pi++){
+  const ranges=blockIntervals(ti,pi),cuts=[...new Set([0,1,...ranges.flat()])].sort((a,b)=>a-b);
+  for(let i=1;i<cuts.length;i++){const lo=cuts[i-1],hi=cuts[i],mid=(lo+hi)/2;if(ranges.some(([a,b])=>mid>=a&&mid<=b))continue;
+   const a=interpolateRoad(t[pi],t[pi+1],lo),b=interpolateRoad(t[pi],t[pi+1],hi);
+   const node=f=>f===0?key(ti,pi):f===1?key(ti,pi+1):'block:'+ti+':'+pi+':'+f;
+   const ka=node(lo),kb=node(hi);add(ka,a);add(kb,b);segments.push({ti,pi,a,b,startEndpoint:pi===0&&lo===0,endEndpoint:pi===t.length-2&&hi===1,blocked:false,cuts:[{t:0,k:ka},{t:1,k:kb}]});
+  }
+ }
+ });
+ const cut=(seg,t,p)=>{const old=seg.cuts.find(x=>Math.abs(x.t-t)<1e-8);if(old)return old.k;const k='s'+seg.ti+':'+seg.pi+':'+(cutSequence++);add(k,p);seg.cuts.push({t,k});return k};
  for(let i=0;i<segments.length;i++)for(let j=i+1;j<segments.length;j++){
   const a=segments[i],b=segments[j];if(a.blocked||b.blocked)continue;if(a.ti===b.ti&&Math.abs(a.pi-b.pi)<=1)continue;
   // Exact intersections split both roads, including crossings within one recording.
   const ax=a.b[1]-a.a[1],ay=a.b[0]-a.a[0],bx=b.b[1]-b.a[1],by=b.b[0]-b.a[0],den=ax*by-ay*bx;
   if(Math.abs(den)>1e-16){const dx=b.a[1]-a.a[1],dy=b.a[0]-a.a[0],t=(dx*by-dy*bx)/den,u=(dx*ay-dy*ax)/den;if(t>=0&&t<=1&&u>=0&&u<=1){const p=[a.a[0]+t*ay,a.a[1]+t*ax];joins.push([cut(a,t,p),cut(b,u,p)]);continue}}
   // Join recording endpoints to road interiors only within 8 metres.
-  for(const [src,dst] of [[a,b],[b,a]])for(const [pt,idx,t] of [[src.a,src.pi,0],[src.b,src.pi+1,1]]){if(idx!==0&&idx!==state.traces[src.ti].length-1)continue;const q=project(pt,dst.a,dst.b);if(q.d<=8)joins.push([cut(src,t,pt),cut(dst,q.t,q.p)])}
+  for(const [src,dst] of [[a,b],[b,a]])for(const [pt,idx,t] of [[src.a,src.pi,0],[src.b,src.pi+1,1]]){if(!(t===0?src.startEndpoint:src.endEndpoint))continue;const original=state.traces[dst.ti],onOriginal=project(pt,original[dst.pi],original[dst.pi+1]);if(blockIntervals(dst.ti,dst.pi).some(([a,b])=>onOriginal.t>=a&&onOriginal.t<=b))continue;const q=project(pt,dst.a,dst.b);if(q.d<=8)joins.push([cut(src,t,pt),cut(dst,q.t,q.p)])}
  }
  segments.forEach(seg=>{if(seg.blocked)return;seg.cuts.sort((a,b)=>a.t-b.t);for(let i=1;i<seg.cuts.length;i++)link(seg.cuts[i-1].k,seg.cuts[i].k)});
  joins.forEach(([a,b])=>link(a,b));
@@ -1125,9 +1087,9 @@ function renderStudio(){
  const selected=id===studio.selected;
  const outline=L.polyline(coords,{pane:"drawnPane",color:selected?'#efaa36':'#647d8a',weight:(r.width||9)+4,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(map);studio.layers.push(outline);
  const inner=L.polyline(coords,{pane:'drawnPane',color:'#fff',weight:r.width||9,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(map);studio.layers.push(inner);surfaces.push(inner);
- for(const l of [outline,inner])l.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(studio.tool!=='select')handleStudioClick(e);else if(blockMode){const ti=state.recordedCount+state.drawnRoadIds.indexOf(id),q=nearestRoadNode(e.latlng,ti);if(q)beginBlockRange(ti,Math.min(q.pi,coords.length-2))}else selectStudio(id)});
+ for(const l of [outline,inner])l.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(studio.tool!=='select')handleStudioClick(e);else if(blockMode){const ti=state.recordedCount+state.drawnRoadIds.indexOf(id),q=nearestRoadNode(e.latlng,ti);if(q)beginBlockRange(ti,Math.min(q.pi,coords.length-2),e.latlng)}else selectStudio(id)});
  // Blocked portions stay visible on official streets.
- const ti=state.recordedCount+state.drawnRoadIds.indexOf(id);for(let i=0;i<coords.length-1;i++)if(blocked(ti,i))closures.push(L.polyline([coords[i],coords[i+1]],{pane:'drawnPane',color:'#ed615b',weight:9,dashArray:'8 7'}).addTo(map));
+ const ti=state.recordedCount+state.drawnRoadIds.indexOf(id);for(let i=0;i<coords.length-1;i++)for(const piece of blockedPieces(ti,i))closures.push(L.polyline(piece,{pane:'drawnPane',color:'#ed615b',weight:9,dashArray:'8 7'}).addTo(map));
  if(showDrawn&&selected&&editor.authorized&&studio.tool==='select'&&!editor.active&&!studio.saving){
  r.controls.forEach((p,i)=>{const m=L.marker(p,{draggable:true,icon:L.divIcon({className:'',html:'<div class="studio-node" style="'+(studio.node===i?'background:#efaa36':'')+'"></div>',iconSize:[15,15],iconAnchor:[7,7]})}).addTo(map);m.on('click',()=>{studio.node=i;studioStatus('Ponto '+(i+1)+' selecionado. Você pode remover esse ponto.')});m.on('dragstart',checkpoint);m.on('dragend',()=>{const p=m.getLatLng(),pos=[p.lat,p.lng];r.controls[i]=(i===0||i===r.controls.length-1)?studioSnap(pos,id):pos;studio.node=i;renderStudio()});studio.handles.push(m)});
  const center=r.controls.reduce((a,p)=>[a[0]+p[0]/r.controls.length,a[1]+p[1]/r.controls.length],[0,0]);const move=L.marker(center,{draggable:true,icon:L.divIcon({className:'',html:'<div class="studio-move">↔</div>',iconSize:[24,24],iconAnchor:[12,12]})}).addTo(map);move.on('dragstart',checkpoint);move.on('dragend',()=>{const p=move.getLatLng(),delta=[p.lat-center[0],p.lng-center[1]];r.controls=r.controls.map(x=>[x[0]+delta[0],x[1]+delta[1]]);renderStudio()});studio.handles.push(move);
@@ -1306,7 +1268,7 @@ function renderRoadView(){
  if(!roadView.ready||cleanNav.view==='top')return;const m=roadView.map,frame=roadViewFrame();m.resize();
  const roads=roadFeatures(studio.roads),hash=JSON.stringify(roads);if(hash!==roadView.roadsHash){m.getSource('drawn-streets').setData(roads);roadView.roadsHash=hash}
  const path=gpsNav.path||[];m.getSource('route-full').setData(lineFeature(path));m.getSource('route-done').setData(lineFeature(frame.match?.done||[]));m.getSource('route-ahead').setData(lineFeature(frame.match?.ahead||path));
- const blockedFeatures=[];state.drawnRoadIds.forEach((id,offset)=>{const ti=state.recordedCount+offset,line=state.traces[ti]||[];for(let i=1;i<line.length;i++)if(blocked(ti,i-1))blockedFeatures.push(...lineFeature([line[i-1],line[i]]).features)});m.getSource('blocked-streets').setData({type:'FeatureCollection',features:blockedFeatures});
+ const blockedFeatures=[];state.drawnRoadIds.forEach((id,offset)=>{const ti=state.recordedCount+offset,line=state.traces[ti]||[];for(let i=1;i<line.length;i++)for(const piece of blockedPieces(ti,i-1))blockedFeatures.push(...lineFeature(piece).features)});m.getSource('blocked-streets').setData({type:'FeatureCollection',features:blockedFeatures});
  roadView.marker.setLngLat([frame.center[1],frame.center[0]]).setRotation(frame.bearing);
  if(path.length){const end=path[path.length-1];if(!roadView.destinationMarker){const el=document.createElement('div');el.className='navigation-destination';el.textContent='⚑';roadView.destinationMarker=new maplibregl.Marker({element:el}).setLngLat([end[1],end[0]]).addTo(m)}else roadView.destinationMarker.setLngLat([end[1],end[0]])}else if(roadView.destinationMarker){roadView.destinationMarker.remove();roadView.destinationMarker=null}
  if(roadView.forceCamera||(gpsNav.follow&&cleanNav.started)){const h=document.getElementById('perspectiveMap').clientHeight,driver=cleanNav.view==='driver';m.easeTo({center:[frame.center[1],frame.center[0]],bearing:frame.bearing,pitch:driver?64:48,zoom:driver?18.7:17.8,padding:{top:Math.round(h*.37),bottom:85,left:18,right:18},duration:roadView.forceCamera?0:650});roadView.forceCamera=false}
@@ -1367,6 +1329,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 
