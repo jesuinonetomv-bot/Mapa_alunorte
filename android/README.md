@@ -1,4 +1,4 @@
-# Mapa Alunorte — Android 0.1.0
+# Mapa Alunorte — Android 0.2.0
 
 Primeiro APK para testes em Android 8.0 ou superior. Aplicativo Android com WebView do sistema, carregando exclusivamente o site oficial `https://jesuinonetomv-bot.github.io/Mapa_alunorte/`. Atualizações do site aparecem no aplicativo sem reinstalar o APK. A conta de administrador pode ser usada normalmente, mas a sessão do navegador não é transferida.
 
@@ -20,6 +20,16 @@ Validação realizada na geração: compilação Java/DEX/recursos Android, alin
 
 Requer JDK 17 com módulo jdk.compiler, Android SDK Platform 35, Build Tools 35.0.0, Bash e zip. Aceite os termos do SDK no ambiente de compilação.
 
-Defina `ANDROID_SDK_ROOT`, `ALUNORTE_KEYSTORE` (caminho privado do .jks) e `ALUNORTE_STORE_PASSWORD`. Execute `bash android/build.sh` da raiz. Saída: `android/build/Mapa-Alunorte-0.1.0.apk`.
+Defina `ANDROID_SDK_ROOT`, `ALUNORTE_KEYSTORE` (caminho privado do .jks) e `ALUNORTE_STORE_PASSWORD`. Execute `bash android/build.sh` da raiz. Saída: `android/build/Mapa-Alunorte-0.2.0.apk`.
 
 Mantenha o keystore e a senha fora do GitHub. Guarde o pacote privado de assinatura entregue com esta versão: futuras atualizações exigem a mesma chave. Incremente `versionCode` e `versionName` no manifesto em novas versões. Identificador Android: `br.com.mapaalunorte`.
+
+
+## Versão 0.2.0 — voz nativa
+
+Inclui síntese de voz em português pelo mecanismo TTS instalado no Android, com foco temporário de áudio e interrupção ao minimizar o app. Não usa microfone. Instale por cima da versão anterior, mantendo a mesma chave de assinatura e o mesmo identificador. Use Menu → Orientações de voz → Testar voz. É necessária uma voz em português disponível no Android e volume de mídia audível.
+
+O site v0.27 acrescenta bloqueio total/parcial, indicação laranja de lentidão e chegada estimada pela velocidade GPS suavizada. Bloqueios antigos continuam totais. Interdição de um lado permite passagem em ambos os sentidos na malha atual; não representa mão única. Em movimento, a chegada usa distância restante/velocidade observada e não é uma garantia de trânsito futuro. Parado, sem velocidade válida ou com sinal impreciso, não é apresentado horário de chegada.
+
+Verificações desta versão: testes de regras de bloqueio, distância real versus custo de lentidão, ETA, deduplicação e intervalo da voz; compilação e assinatura Android. Ainda requer teste no celular para voz, foco de áudio, GPS e bússola.
+

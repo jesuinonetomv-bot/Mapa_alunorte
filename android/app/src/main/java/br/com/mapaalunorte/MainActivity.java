@@ -8,6 +8,12 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
+import android.media.AudioManager;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
@@ -46,6 +52,12 @@ public final class MainActivity extends Activity {
     private GeolocationPermissions.Callback locationCallback;
     private String locationOrigin;
     private byte[] pendingBackup;
+    private TextToSpeech tts;
+    private volatile boolean ttsReady, foreground, closing;
+    private volatile long lastSpeechAt;
+    private AudioManager audioManager;
+    private AudioFocusRequest speechFocus;
+    private String activeSpeechId;
     private boolean exportBusy;
     private boolean failed;
     private static final int LOCATION_REQUEST = 10, EXPORT_REQUEST = 11;
@@ -60,6 +72,23 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        audioManager=(AudioManager)getSystemService(AUDIO_SERVICE);
+        AudioAttributes audio=new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build();
+        speechFocus=new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).setAudioAttributes(audio).setOnAudioFocusChangeListener(focus->{if(focus<0&&tts!=null)tts.stop();}).build();
+        tts=new TextToSpeech(this,status->{
+            if(closing||tts==null)return;
+            if(status==TextToSpeech.SUCCESS){
+                int language=tts.setLanguage(new Locale("pt","BR"));
+                ttsReady=language!=TextToSpeech.LANG_MISSING_DATA&&language!=TextToSpeech.LANG_NOT_SUPPORTED;
+                tts.setSpeechRate(1.0f);tts.setAudioAttributes(audio);
+                tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){
+                    @Override public void onStart(String id){}
+                    @Override public void onDone(String id){runOnUiThread(()->releaseSpeechFocus(id));}
+                    @Override public void onError(String id){runOnUiThread(()->{releaseSpeechFocus(id);toast("Não foi possível reproduzir a voz. Confira a voz em português nas configurações do Android.");});}
+                });
+            }
+            publishVoiceStatus();
+        });
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(23,58,74));
@@ -103,6 +132,7 @@ public final class MainActivity extends Activity {
             }
             @Override public void onPageFinished(WebView view, String url) {
                 if (!isAppUrl(Uri.parse(url)) || failed) return;
+                publishVoiceStatus();
                 // Export through Android's document picker; no storage permission is needed.
                 view.evaluateJavascript("(function(){var b=document.getElementById('btnExport');if(b)b.onclick=function(){try{AlunorteAndroid.saveBackup(JSON.stringify({...state,streetStudio:studioModel(),rawRoads,roadRevisions},null,2));}catch(e){alert('Não foi possível exportar o mapa.');}};})()", null);
             }
@@ -170,7 +200,24 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private boolean trustedPage(){return web!=null&&isAppUrl(Uri.parse(web.getUrl()==null?"":web.getUrl()));}
+    private void publishVoiceStatus(){if(web!=null)web.evaluateJavascript("window.dispatchEvent(new CustomEvent('alunorte-voice-status',{detail:{ready:"+ttsReady+"}}))",null);}
+    private void releaseSpeechFocus(String id){if(id!=null&&!id.equals(activeSpeechId))return;activeSpeechId=null;if(audioManager!=null&&speechFocus!=null)audioManager.abandonAudioFocusRequest(speechFocus);}
+    private void stopSpeech(){if(tts!=null)tts.stop();releaseSpeechFocus(null);}
     public final class ExportBridge {
+        @JavascriptInterface public boolean voiceReady(){return ttsReady&&foreground&&!closing;}
+        @JavascriptInterface public boolean speak(String text){
+            if(text==null||text.length()==0||text.length()>400||!ttsReady||!foreground||closing)return false;
+            long now=SystemClock.elapsedRealtime();if(lastSpeechAt>0&&now-lastSpeechAt<7000)return false;lastSpeechAt=now;
+            runOnUiThread(()->{
+                if(!trustedPage()||!foreground||!ttsReady||tts==null)return;
+                if(audioManager.requestAudioFocus(speechFocus)!=AudioManager.AUDIOFOCUS_REQUEST_GRANTED)return;
+                activeSpeechId="alunorte-"+SystemClock.elapsedRealtime();
+                int result=tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,activeSpeechId);
+                if(result==TextToSpeech.ERROR){releaseSpeechFocus(null);toast("Não foi possível reproduzir a orientação.");}
+            });return true;
+        }
+        @JavascriptInterface public void stopVoice(){runOnUiThread(()->stopSpeech());}
         @JavascriptInterface public void saveBackup(String json) {
             if (json==null || json.length()>20*1024*1024) return;
             try { new JSONObject(json); } catch (Exception e) { return; }
@@ -205,9 +252,10 @@ public final class MainActivity extends Activity {
                 .setPositiveButton("Sair",(d,w)->finish()).setNegativeButton("Continuar",null).show();
         });
     }
-    @Override protected void onPause() { super.onPause(); web.onPause(); }
-    @Override protected void onResume() { super.onResume(); if(web!=null)web.onResume(); }
-    @Override protected void onDestroy() { clearLocationPrompt(false); if(web!=null){web.removeJavascriptInterface("AlunorteAndroid");web.destroy();} super.onDestroy(); }
+    @Override protected void onPause() { foreground=false;stopSpeech();super.onPause(); web.onPause(); }
+    @Override protected void onResume() { super.onResume();foreground=true; if(web!=null)web.onResume(); }
+    @Override protected void onDestroy() { closing=true;ttsReady=false;stopSpeech();if(tts!=null){tts.shutdown();tts=null;}clearLocationPrompt(false); if(web!=null){web.removeJavascriptInterface("AlunorteAndroid");web.destroy();} super.onDestroy(); }
     private int dp(int n) { return Math.round(n*getResources().getDisplayMetrics().density); }
     private void toast(String message) { Toast.makeText(this,message,Toast.LENGTH_LONG).show(); }
 }
+
