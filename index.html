@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mapa Alunorte</title>
+<meta name="mapa-revision" content="web-13be62b8688aa1c5">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--dark:#444d55;--accent:#43807a;--danger:#b95946;--road:#566168;--route:#1976d2}
@@ -108,7 +109,7 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
 </style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style><style>body.editing-block .map-actions{display:none}.block-editor.on{bottom:12px;width:min(420px,calc(100% - 24px));min-width:0;box-sizing:border-box;z-index:1700}.block-editor input{width:100%;box-sizing:border-box}.block-editor label{text-align:left;font-size:12px}</style><style>.block-editor.on{max-height:65vh;overflow-y:auto}.block-editor select{width:100%;font-size:12px;min-height:38px}.navigating #navProgress{bottom:76px;max-width:calc(100% - 175px);font-size:12px;white-space:pre-line;background:#fff;color:#173a4a;text-align:left;line-height:1.5}.slow-route-warning{color:#a65b00;font-weight:700}</style></head>
 <body>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.27 Voz, chegada e lentidão</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.28 Atualização no aplicativo</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -1493,6 +1494,7 @@ if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setV
 </script>
 </body>
 </html>
+
 
 
 

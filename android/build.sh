@@ -16,7 +16,7 @@ find build/classes -name '*.class' >build/classes.txt
 cp build/base.apk build/unsigned.apk
 (cd build/dex && zip -q ../unsigned.apk classes.dex)
 "$BUILD_TOOLS/zipalign" -f -p 4 build/unsigned.apk build/aligned.apk
-"$BUILD_TOOLS/apksigner" sign --ks "$ALUNORTE_KEYSTORE" --ks-key-alias alunorte --ks-pass env:ALUNORTE_STORE_PASSWORD --key-pass env:ALUNORTE_STORE_PASSWORD --out build/Mapa-Alunorte-0.2.0.apk build/aligned.apk
-"$BUILD_TOOLS/apksigner" verify --verbose build/Mapa-Alunorte-0.2.0.apk
-"$BUILD_TOOLS/zipalign" -c -v 4 build/Mapa-Alunorte-0.2.0.apk
+"$BUILD_TOOLS/apksigner" sign --ks "$ALUNORTE_KEYSTORE" --ks-key-alias alunorte --ks-pass env:ALUNORTE_STORE_PASSWORD --key-pass env:ALUNORTE_STORE_PASSWORD --out build/Mapa-Alunorte-0.2.1.apk build/aligned.apk
+"$BUILD_TOOLS/apksigner" verify --verbose build/Mapa-Alunorte-0.2.1.apk
+"$BUILD_TOOLS/zipalign" -c -v 4 build/Mapa-Alunorte-0.2.1.apk
 

@@ -9,6 +9,12 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.Handler;
+import android.os.Looper;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.media.AudioManager;
@@ -58,6 +64,11 @@ public final class MainActivity extends Activity {
     private AudioManager audioManager;
     private AudioFocusRequest speechFocus;
     private String activeSpeechId;
+    private boolean pageReady, checkingVersion;
+    private String loadedRevision="", pendingRevision="";
+    private long lastVersionCheck;
+    private final Handler updateHandler=new Handler(Looper.getMainLooper());
+    private final Runnable updatePoll=new Runnable(){public void run(){if(foreground&&!closing){checkMapVersion();updateHandler.postDelayed(this,60000);}}};
     private boolean exportBusy;
     private boolean failed;
     private static final int LOCATION_REQUEST = 10, EXPORT_REQUEST = 11;
@@ -104,6 +115,7 @@ public final class MainActivity extends Activity {
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setGeolocationEnabled(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
@@ -126,18 +138,24 @@ public final class MainActivity extends Activity {
                 return true;
             }
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) {
-                failed = false;
+                pageReady=false;failed = false;
                 errorPanel.setVisibility(View.GONE);
                 progress.setVisibility(View.VISIBLE);
             }
             @Override public void onPageFinished(WebView view, String url) {
                 if (!isAppUrl(Uri.parse(url)) || failed) return;
+                pageReady=true;
+                addUpdateControls();
+                view.evaluateJavascript("(function(){var m=document.querySelector('meta[name=mapa-revision]');return m?m.content:'legacy';})()",value->{
+                    try{loadedRevision=new org.json.JSONArray("["+value+"]").getString(0);}catch(Exception e){loadedRevision="legacy";}
+                    checkMapVersion();
+                });
                 publishVoiceStatus();
                 // Export through Android's document picker; no storage permission is needed.
                 view.evaluateJavascript("(function(){var b=document.getElementById('btnExport');if(b)b.onclick=function(){try{AlunorteAndroid.saveBackup(JSON.stringify({...state,streetStudio:studioModel(),rawRoads,roadRevisions},null,2));}catch(e){alert('Não foi possível exportar o mapa.');}};})()", null);
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                if (request.isForMainFrame()) { failed = true; progress.setVisibility(View.GONE); errorPanel.setVisibility(View.VISIBLE); }
+                if (request.isForMainFrame()) { pageReady=false;failed = true; progress.setVisibility(View.GONE); errorPanel.setVisibility(View.VISIBLE); }
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
@@ -179,10 +197,10 @@ public final class MainActivity extends Activity {
         message.setText("Não foi possível carregar o mapa\n\nEsta versão precisa de internet. Confira sua conexão e tente novamente.");
         message.setTextSize(18); message.setGravity(Gravity.CENTER); message.setTextColor(Color.rgb(23,58,74));
         errorPanel.addView(message);
-        Button retry = new Button(this); retry.setText("Tentar novamente"); retry.setOnClickListener(v->web.loadUrl(HOME));
+        Button retry = new Button(this); retry.setText("Tentar novamente"); retry.setOnClickListener(v->requestMapRefresh(true));
         errorPanel.addView(retry); errorPanel.setVisibility(View.GONE);
         root.addView(errorPanel,new FrameLayout.LayoutParams(-1,-1));
-        web.loadUrl(HOME);
+        loadFreshMap();
     }
 
     private boolean hasLocation() {
@@ -200,11 +218,59 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void loadFreshMap(){
+        if(web==null||closing)return;
+        pageReady=false;pendingRevision="";
+        java.util.Map<String,String> headers=new java.util.HashMap<>();headers.put("Cache-Control","no-cache, no-store");headers.put("Pragma","no-cache");
+        web.loadUrl(HOME+"?android=0.2.1&refresh="+System.currentTimeMillis(),headers);
+    }
+    private void addUpdateControls(){
+        if(!trustedPage())return;
+        web.evaluateJavascript("(function(){var a=document.querySelector('aside');if(!a)return;var c=document.getElementById('nativeAppInfo');if(!c){c=document.createElement('div');c.id='nativeAppInfo';c.className='card';var h=document.createElement('h2');h.textContent='Aplicativo Android';c.appendChild(h);var p=document.createElement('p');p.id='nativeAppVersion';p.style.fontSize='12px';c.appendChild(p);var b=document.createElement('button');b.textContent='Atualizar mapa agora';b.onclick=function(){AlunorteAndroid.refreshMap();};c.appendChild(b);a.appendChild(c);}var m=document.querySelector('header h1 span');document.getElementById('nativeAppVersion').textContent='Android 0.2.1 • '+(m?m.textContent:'Mapa Alunorte');})()",null);
+    }
+    private void requestMapRefresh(boolean manual){
+        if(web==null||closing)return;
+        if(!pageReady){if(manual)loadFreshMap();return;}
+        web.evaluateJavascript("Boolean((typeof cleanNav!=='undefined'&&cleanNav.started)||(typeof recording!=='undefined'&&recording)||(typeof studio!=='undefined'&&studio.dirty)||(typeof editor!=='undefined'&&editor.active)||(typeof blockMode!=='undefined'&&blockMode))",busy->{
+            if(closing||!foreground)return;
+            if("true".equals(busy)){
+                if(manual)new AlertDialog.Builder(this).setTitle("Atualizar o mapa?").setMessage("Isso encerra a navegação ou gravação e descarta alterações ainda não salvas. Prefere concluir antes de atualizar?")
+                    .setPositiveButton("Atualizar agora",(d,w)->loadFreshMap()).setNegativeButton("Continuar como está",null).show();
+                else showUpdateStatus("Nova versão disponível. Conclua a navegação/gravação e use Atualizar mapa agora.");
+            }else loadFreshMap();
+        });
+    }
+    private void showUpdateStatus(String message){
+        if(!trustedPage())return;
+        web.evaluateJavascript("(function(){var p=document.getElementById('nativeAppVersion');if(p)p.textContent="+JSONObject.quote("Android 0.2.1 • "+message)+";})()",null);
+    }
+    private void checkMapVersion(){
+        if(checkingVersion||!foreground||!pageReady||loadedRevision.isEmpty()||closing)return;
+        long now=SystemClock.elapsedRealtime();if(now-lastVersionCheck<15000)return;
+        checkingVersion=true;lastVersionCheck=now;
+        new Thread(()->{
+            String revision=null;HttpURLConnection connection=null;
+            try{
+                connection=(HttpURLConnection)new URL(HOME+"app-version.json?check="+System.currentTimeMillis()).openConnection();
+                connection.setConnectTimeout(8000);connection.setReadTimeout(8000);connection.setUseCaches(false);connection.setInstanceFollowRedirects(false);
+                connection.setRequestProperty("Cache-Control","no-cache");
+                if(connection.getResponseCode()==200){try(InputStream in=connection.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){
+                    byte[] bytes=new byte[1024];int n;while((n=in.read(bytes))!=-1){out.write(bytes,0,n);if(out.size()>8192)throw new java.io.IOException();}
+                    String candidate=new JSONObject(out.toString("UTF-8")).getString("revision");if(candidate.matches("[a-zA-Z0-9._-]{1,80}"))revision=candidate;
+                }}
+            }catch(Exception ignored){}finally{if(connection!=null)connection.disconnect();}
+            final String latest=revision;runOnUiThread(()->{
+                checkingVersion=false;if(closing||!foreground||latest==null||!pageReady)return;
+                if(!latest.equals(loadedRevision)){pendingRevision=latest;requestMapRefresh(false);}
+            });
+        }).start();
+    }
     private boolean trustedPage(){return web!=null&&isAppUrl(Uri.parse(web.getUrl()==null?"":web.getUrl()));}
     private void publishVoiceStatus(){if(web!=null)web.evaluateJavascript("window.dispatchEvent(new CustomEvent('alunorte-voice-status',{detail:{ready:"+ttsReady+"}}))",null);}
     private void releaseSpeechFocus(String id){if(id!=null&&!id.equals(activeSpeechId))return;activeSpeechId=null;if(audioManager!=null&&speechFocus!=null)audioManager.abandonAudioFocusRequest(speechFocus);}
     private void stopSpeech(){if(tts!=null)tts.stop();releaseSpeechFocus(null);}
     public final class ExportBridge {
+        @JavascriptInterface public void refreshMap(){runOnUiThread(()->{if(trustedPage())requestMapRefresh(true);});}
         @JavascriptInterface public boolean voiceReady(){return ttsReady&&foreground&&!closing;}
         @JavascriptInterface public boolean speak(String text){
             if(text==null||text.length()==0||text.length()>400||!ttsReady||!foreground||closing)return false;
@@ -252,10 +318,11 @@ public final class MainActivity extends Activity {
                 .setPositiveButton("Sair",(d,w)->finish()).setNegativeButton("Continuar",null).show();
         });
     }
-    @Override protected void onPause() { foreground=false;stopSpeech();super.onPause(); web.onPause(); }
-    @Override protected void onResume() { super.onResume();foreground=true; if(web!=null)web.onResume(); }
-    @Override protected void onDestroy() { closing=true;ttsReady=false;stopSpeech();if(tts!=null){tts.shutdown();tts=null;}clearLocationPrompt(false); if(web!=null){web.removeJavascriptInterface("AlunorteAndroid");web.destroy();} super.onDestroy(); }
+    @Override protected void onPause() { foreground=false;updateHandler.removeCallbacks(updatePoll);stopSpeech();super.onPause(); web.onPause(); }
+    @Override protected void onResume() { super.onResume();foreground=true; if(web!=null)web.onResume();updateHandler.removeCallbacks(updatePoll);updateHandler.post(updatePoll); }
+    @Override protected void onDestroy() { closing=true;updateHandler.removeCallbacks(updatePoll);ttsReady=false;stopSpeech();if(tts!=null){tts.shutdown();tts=null;}clearLocationPrompt(false); if(web!=null){web.removeJavascriptInterface("AlunorteAndroid");web.destroy();} super.onDestroy(); }
     private int dp(int n) { return Math.round(n*getResources().getDisplayMetrics().density); }
     private void toast(String message) { Toast.makeText(this,message,Toast.LENGTH_LONG).show(); }
 }
+
 
