@@ -1,0 +1,59 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "administradores": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+    "mapaAcesso": {
+      ".read": "auth != null && root.child('administradores').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('administradores').child(auth.uid).val() === true"
+    },
+    "presencasMapa": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['lat','lon','accuracy','cell','updatedAt']) && newData.child('cell').isString() && root.child('mapaAcesso/cells').child(newData.child('cell').val()).exists() && newData.child('lat').isNumber() && newData.child('lon').isNumber() && newData.child('accuracy').isNumber() && newData.child('accuracy').val() > 0 && newData.child('accuracy').val() <= 100 && newData.child('updatedAt').val() === now && newData.child('lat').val() >= root.child('mapaAcesso/cells').child(newData.child('cell').val()).child('south').val() && newData.child('lat').val() < root.child('mapaAcesso/cells').child(newData.child('cell').val()).child('north').val() && newData.child('lon').val() >= root.child('mapaAcesso/cells').child(newData.child('cell').val()).child('west').val() && newData.child('lon').val() < root.child('mapaAcesso/cells').child(newData.child('cell').val()).child('east').val()",
+        "lat": {
+          ".validate": "newData.isNumber()"
+        },
+        "lon": {
+          ".validate": "newData.isNumber()"
+        },
+        "accuracy": {
+          ".validate": "newData.isNumber()"
+        },
+        "cell": {
+          ".validate": "newData.isString() && newData.val().length < 30"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "mapa": {
+      ".read": "auth != null && ((auth != null && root.child('administradores').child(auth.uid).val() === true) || (root.child('presencasMapa').child(auth.uid).child('updatedAt').isNumber() && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() > now - 45000 && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() <= now && root.child('mapaAcesso/cells').child(root.child('presencasMapa').child(auth.uid).child('cell').val()).exists()))",
+      "base": {
+        ".write": "auth != null && root.child('administradores').child(auth.uid).val() === true"
+      },
+      "ruas": {
+        ".write": "auth != null && ((auth != null && root.child('administradores').child(auth.uid).val() === true) || (root.child('presencasMapa').child(auth.uid).child('updatedAt').isNumber() && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() > now - 45000 && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() <= now && root.child('mapaAcesso/cells').child(root.child('presencasMapa').child(auth.uid).child('cell').val()).exists()))"
+      },
+      "pontos": {
+        ".write": "auth != null && ((auth != null && root.child('administradores').child(auth.uid).val() === true) || (root.child('presencasMapa').child(auth.uid).child('updatedAt').isNumber() && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() > now - 45000 && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() <= now && root.child('mapaAcesso/cells').child(root.child('presencasMapa').child(auth.uid).child('cell').val()).exists()))"
+      },
+      "bloqueios": {
+        ".write": "auth != null && ((auth != null && root.child('administradores').child(auth.uid).val() === true) || (root.child('presencasMapa').child(auth.uid).child('updatedAt').isNumber() && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() > now - 45000 && root.child('presencasMapa').child(auth.uid).child('updatedAt').val() <= now && root.child('mapaAcesso/cells').child(root.child('presencasMapa').child(auth.uid).child('cell').val()).exists()))"
+      },
+      "refinamentos": {
+        ".write": "auth != null && root.child('administradores').child(auth.uid).val() === true"
+      }
+    }
+  }
+}

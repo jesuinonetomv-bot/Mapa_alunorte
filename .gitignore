@@ -1,0 +1,8 @@
+/security-private/
+/deliverables/
+/recovered*/
+/helpers*/
+/helper-*/
+/database-debug.log
+/firebase-debug.log
+/node_modules/

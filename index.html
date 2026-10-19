@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mapa Alunorte</title>
-<meta name="mapa-revision" content="web-13be62b8688aa1c5">
+<meta name="mapa-revision" content="web-c270d5f0a839f026">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--dark:#444d55;--accent:#43807a;--danger:#b95946;--road:#566168;--route:#1976d2}
@@ -106,10 +106,11 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
 </style>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css"><style>
 #perspectiveMap{position:absolute;inset:0;z-index:500;width:100%;height:100%;background:#e8ece7}.perspective-mode .leaflet-control-zoom{display:none}.maplibregl-ctrl-attrib{font-size:9px!important}.navigation-location{width:46px;height:46px;filter:drop-shadow(0 3px 4px #1235)}.navigation-destination{background:white;color:#315ded;border:3px solid #315ded;border-radius:50%;font-size:23px;width:36px;height:36px;text-align:center;line-height:29px}.turn-banner{display:flex!important;align-items:center;gap:14px;text-align:left!important;background:#173a4a!important;padding:14px 18px!important}.turn-banner .turn-arrow{font-size:38px;line-height:1;color:white}.turn-banner b{display:block;font-size:17px;line-height:1.3}.turn-banner small{display:block;margin-top:5px;font-size:12px;color:#d6e7ef}#navHint{top:145px;background:#ffffffeb;border-radius:12px;padding:5px;font-size:11px}.perspective-mode #navHint:empty{display:none}
-</style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style><style>body.editing-block .map-actions{display:none}.block-editor.on{bottom:12px;width:min(420px,calc(100% - 24px));min-width:0;box-sizing:border-box;z-index:1700}.block-editor input{width:100%;box-sizing:border-box}.block-editor label{text-align:left;font-size:12px}</style><style>.block-editor.on{max-height:65vh;overflow-y:auto}.block-editor select{width:100%;font-size:12px;min-height:38px}.navigating #navProgress{bottom:76px;max-width:calc(100% - 175px);font-size:12px;white-space:pre-line;background:#fff;color:#173a4a;text-align:left;line-height:1.5}.slow-route-warning{color:#a65b00;font-weight:700}</style></head>
-<body>
+</style><style>.navigation-place{position:relative;cursor:pointer;width:27px;height:27px;z-index:1}.navigation-place-icon{display:flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border:2px solid #64869a;color:#214a60;border-radius:50%;font-size:14px;box-shadow:0 1px 4px #1233}.navigation-place-label{position:absolute;left:32px;top:2px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px/22px Arial,sans-serif;color:#263f4c;background:#fffffff0;border-radius:7px;padding:0 5px;box-shadow:0 1px 3px #1232}.navigation-place:focus{outline:3px solid #4285f4;border-radius:50%}.maplibregl-popup-content{font:13px Arial;color:#173a4a;border-radius:14px;padding:15px}.maplibregl-popup-content button{font-size:12px}</style><style>body.editing-block .map-actions{display:none}.block-editor.on{bottom:12px;width:min(420px,calc(100% - 24px));min-width:0;box-sizing:border-box;z-index:1700}.block-editor input{width:100%;box-sizing:border-box}.block-editor label{text-align:left;font-size:12px}</style><style>.block-editor.on{max-height:65vh;overflow-y:auto}.block-editor select{width:100%;font-size:12px;min-height:38px}.navigating #navProgress{bottom:76px;max-width:calc(100% - 175px);font-size:12px;white-space:pre-line;background:#fff;color:#173a4a;text-align:left;line-height:1.5}.slow-route-warning{color:#a65b00;font-weight:700}</style><style>.access-locked header,.access-locked #app,.access-locked #permissionOverlay{display:none!important}#accessGate{position:fixed;inset:0;z-index:99999;background:#173a4a;display:flex;align-items:center;justify-content:center;overflow:auto;padding:20px;box-sizing:border-box}.gate-card{max-width:420px;background:white;border-radius:24px;padding:24px;color:#173a4a;box-shadow:0 8px 40px #0003}.gate-card h1{font-size:25px}.gate-card h2{font-size:18px}.gate-card p{font-size:14px;line-height:1.5}.gate-card button,.gate-card input{display:block;width:100%;margin:10px 0;box-sizing:border-box}.gate-card small{display:block;line-height:1.4;color:#567;font-size:11px}</style></head>
+<body class="access-locked">
+<section id="accessGate" role="region" aria-label="Acesso restrito ao mapa"><div class="gate-card"><h1>Mapa Alunorte</h1><h2>Acesso restrito</h2><p>O mapa e as rotas são liberados somente com localização atual próxima das vias da refinaria, em uma área de aproximadamente 3 km.</p><p id="gateStatus" role="status">Conectando ao serviço de acesso…</p><button id="gateGps">Validar minha localização</button><button id="gateAdminButton" class="dark">Entrar como administrador</button><form id="gateAdminForm" hidden><input id="gateEmail" type="email" autocomplete="username" placeholder="E-mail do administrador" required aria-label="E-mail do administrador"><input id="gatePassword" type="password" autocomplete="current-password" placeholder="Senha" required aria-label="Senha do administrador"><button>Entrar</button></form><small>Administradores autenticados podem entrar de qualquer localização.</small></div></section>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.28 Atualização no aplicativo</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.29 Acesso por proximidade</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -218,7 +219,7 @@ aside.clean-drawer{position:absolute;z-index:1600;top:8px;left:8px;bottom:8px;wi
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-import { getDatabase, ref, push, set, remove, onValue, serverTimestamp, get, runTransaction } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+import { getDatabase, ref, push, set, remove, onValue, serverTimestamp, get, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAnX5SFNcCh9iKQjbcRwq7JfYnZ-Kvt6Rg",
@@ -243,7 +244,7 @@ window.fbMap = {
   set,
   remove,
   onValue,
-  serverTimestamp, get, runTransaction,
+  serverTimestamp, get, runTransaction, onDisconnect,
   login:(email,password)=>signInWithEmailAndPassword(auth,email,password),
   logout:()=>signOut(auth).then(()=>signInAnonymously(auth))
 };
@@ -254,6 +255,7 @@ function fbStatus(text){
 }
 
 onAuthStateChanged(auth, user => {
+  if(!user){window.fbMap.user=null;window.fbMap.ready=false;window.fbMap.uid=null;window.dispatchEvent(new Event("map-auth-changed"));}
   if(!user){signInAnonymously(auth).catch(err=>fbStatus("Erro ao conectar ao Firebase: "+err.code));return}
   if(user){
     window.fbMap.user=user;
@@ -272,8 +274,8 @@ onAuthStateChanged(auth, user => {
 const gpsNav={path:null,follow:false,heading:0,sensorHeading:null,arrow:null,remainingLine:null,remainingBorder:null,travelledLine:null,destination:"",destinationGap:0};
 const studio={roads:{},official:true,base:null,dirty:false,tool:"select",selected:null,node:null,points:[],layers:[],handles:[],undo:[],redo:[],saving:false,hiddenUsers:new Set(),showRecorded:true};
 const editor={authorized:false,active:false,selected:null,handles:[],undo:[],base:null,versions:null,busy:false};
-const SEED_TRACK = [[-1.5528436, -48.7322755], [-1.5522112, -48.7321207], [-1.5516658, -48.7317553], [-1.551377, -48.7315242], [-1.5512773, -48.731445], [-1.5509593, -48.7312885], [-1.5503169, -48.730921], [-1.5496476, -48.7305208], [-1.549159, -48.7303004], [-1.5489402, -48.7304155], [-1.5488709, -48.7304786], [-1.5487732, -48.7304561], [-1.5486755, -48.7304725], [-1.5486183, -48.730545], [-1.5485431, -48.7306004], [-1.5484992, -48.7306845], [-1.5489285, -48.7304724], [-1.5488507, -48.7305243], [-1.5487272, -48.7305947], [-1.5485971, -48.7307052], [-1.5484724, -48.7308349], [-1.5484587, -48.7309265], [-1.5483701, -48.7309844], [-1.5482774, -48.7310197], [-1.5482092, -48.7310795], [-1.5481436, -48.7312141], [-1.5480734, -48.7313186], [-1.5479889, -48.7313763], [-1.5479201, -48.7314389], [-1.5478953, -48.731558], [-1.5478818, -48.7316752], [-1.5477648, -48.7318596], [-1.5476907, -48.7319628], [-1.5476172, -48.7320412], [-1.5475487, -48.7321154], [-1.547491, -48.7322411], [-1.5473801, -48.7323322], [-1.5473217, -48.7324084], [-1.5472305, -48.732408], [-1.5471513, -48.7323594], [-1.5469804, -48.7323346], [-1.5469104, -48.7323977], [-1.546853, -48.7324748], [-1.5467555, -48.7324577], [-1.5466414, -48.7324188], [-1.5465665, -48.7324722], [-1.5465004, -48.7325698], [-1.546458, -48.7326849], [-1.5463835, -48.7327755], [-1.5462869, -48.7327734], [-1.5462028, -48.7327018], [-1.5461075, -48.7326597], [-1.5460155, -48.7325943], [-1.5459064, -48.7325201], [-1.5458089, -48.7324677], [-1.5457346, -48.7323936], [-1.5456516, -48.7323533], [-1.545554, -48.7322949], [-1.5454494, -48.7323392], [-1.5453732, -48.7324526], [-1.5453268, -48.7325732], [-1.545277, -48.7326557], [-1.5452257, -48.7327341], [-1.5451699, -48.7328092], [-1.5451081, -48.7328811], [-1.5450212, -48.7329323], [-1.5449748, -48.7330261], [-1.5449253, -48.7331266], [-1.5448615, -48.7332262], [-1.5448102, -48.7333253], [-1.544738, -48.7333864], [-1.5446114, -48.7333543], [-1.5444933, -48.7333015], [-1.5443678, -48.7332541], [-1.5442606, -48.7331899], [-1.5441503, -48.733153], [-1.5440521, -48.7330809], [-1.5439547, -48.7330352], [-1.5438575, -48.7329625], [-1.5437748, -48.7328911], [-1.5437054, -48.7328219], [-1.5435775, -48.7327814], [-1.5434743, -48.7327661], [-1.5434003, -48.7327106], [-1.5433204, -48.7326654], [-1.5432386, -48.7327092], [-1.5431847, -48.7327859]];
-const SEED_POINTS = [{"id": "seed-0", "name": "Chapeira", "category": "Local", "lat": -1.5486357, "lon": -48.7304949}, {"id": "seed-1", "name": "Entrada da Alunorte", "category": "Local", "lat": -1.5523812, "lon": -48.7322256}, {"id": "seed-2", "name": "Entrada sala dos TGs", "category": "Local", "lat": -1.5431767, "lon": -48.7327874}, {"id": "seed-3", "name": "Prédio da diretoria", "category": "Local", "lat": -1.5467972, "lon": -48.7324739}, {"id": "seed-4", "name": "Restaurante central", "category": "Local", "lat": -1.5484588, "lon": -48.7309118}, {"id": "seed-5", "name": "Subestação SE-02A-1", "category": "Subestação", "lat": -1.5451082, "lon": -48.7328795}, {"id": "seed-6", "name": "Subestação SE-14B-1", "category": "Subestação", "lat": -1.5462975, "lon": -48.7327696}, {"id": "seed-7", "name": "Subestação SE-56C-1 geradores", "category": "Subestação", "lat": -1.544758, "lon": -48.7333851}, {"id": "seed-8", "name": "Subestação SSe-02C-1", "category": "Subestação", "lat": -1.5435816, "lon": -48.7327834}, {"id": "seed-9", "name": "Vestiário", "category": "Local", "lat": -1.5489323, "lon": -48.7304638}];
+let SEED_TRACK=[];
+let SEED_POINTS=[];
 const STORAGE_KEY = "mapa_alunorte_v05";
 
 const map=L.map("map",{zoomControl:false});
@@ -284,16 +286,16 @@ map.createPane('locationsPane');map.getPane('locationsPane').style.zIndex=600;
 let showDrawn=true,showLocations=true;
 
 L.control.zoom({position:"topright"}).addTo(map);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap"}).addTo(map);
+const baseMap=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap"});
 
 let state=loadState(), currentPosition=null, gpsMarker=null, accuracyLayer=null;
 let watchId=null, recording=false, activeTraceIndex=null, routeLayer=null, blockMode=false;
 let blockStartMarker=null, blockEndMarker=null, blockPreviewLayer=null, blockTraceIndex=null, editingBlockGroup=null, blockSaving=false;
 let roadLayers=[], pointLayers=[];
 
-function defaults(){return {traces:[SEED_TRACK],points:SEED_POINTS,blockedEdges:[]}}
-function loadState(){try{const v=localStorage.getItem(STORAGE_KEY);if(v)return JSON.parse(v)}catch(e){}return defaults()}
-function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll();if(!recording)renderStudio()}
+function defaults(){return {traces:[],points:[],blockedEdges:[],recordedCount:0,drawnRoadIds:[]}}
+function loadState(){try{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem('mapa_alunorte_last_position')}catch(e){}return defaults()}
+function save(){if(!accessGate.allowed)return;renderAll();if(!recording)renderStudio()}
 
 function hav(a,b){
  const R=6371000,r=Math.PI/180,p1=a[0]*r,p2=b[0]*r,dp=(b[0]-a[0])*r,dl=(b[1]-a[1])*r;
@@ -404,17 +406,11 @@ function startWatch(){
 }
 
 function acceptPosition(p, centerNow){
+ if(!accessGate.allowed)return;
  const previous=currentPosition;
  currentPosition=[p.coords.latitude,p.coords.longitude];
  const acc=Math.round(p.coords.accuracy||0);
 
- // Guarda a última posição boa para a próxima abertura.
- try{
-   localStorage.setItem("mapa_alunorte_last_position", JSON.stringify({
-     lat:currentPosition[0], lon:currentPosition[1],
-     accuracy:acc, time:Date.now()
-   }));
- }catch(e){}
 
  if(!gpsMarker){
    gpsMarker=L.circleMarker(currentPosition,{
@@ -466,6 +462,7 @@ function onWatchError(e){
 }
 
 function enterWithoutGps(){
+ if(!accessGate.admin){gateStatus('A localização atual é obrigatória para acesso comum.');return}
  document.getElementById("permissionOverlay").style.display="none";
 
  // Se houver uma posição recente salva, mostra como referência até chegar GPS novo.
@@ -643,6 +640,7 @@ function renderBlocks(){
  });
 }
 function renderAll(){
+ if(!accessGate.allowed)return;
  renderRoads();renderPoints();renderBlocks();
  let s=0;state.traces.forEach(t=>s+=Math.max(0,t.length-1));
  document.getElementById("kRoads").textContent=s;
@@ -651,8 +649,109 @@ function renderAll(){
 }
 
 
+// Private coverage is generated by an administrator, never downloaded by ordinary clients.
+const ACCESS_GRID_STEP=.001,ACCESS_RADIUS_METERS=3000;
+function accessCellFor(lat,lon){return Math.floor((lat+90)/ACCESS_GRID_STEP)+'_'+Math.floor((lon+180)/ACCESS_GRID_STEP)}
+function accessDistance(a,b){const r=Math.PI/180,dlat=(b[0]-a[0])*r,dlon=(b[1]-a[1])*r,v=Math.sin(dlat/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dlon/2)**2;return 6371000*2*Math.asin(Math.sqrt(Math.min(1,v)))}
+function accessAnchors(paths){const points=[],seen=new Set();for(const path of paths){if(!Array.isArray(path))continue;for(let i=0;i<path.length;i++){const p=path[i];if(!Array.isArray(p)||!Number.isFinite(p[0])||!Number.isFinite(p[1]))continue;const prev=path[Math.max(0,i-1)],n=i?Math.max(1,Math.ceil(accessDistance(prev,p)/100)):1;for(let j=i?1:0;j<=n;j++){const t=i?j/n:0,q=i?[prev[0]+t*(p[0]-prev[0]),prev[1]+t*(p[1]-prev[1])]:p;const key=q.map(x=>Math.round(x*100000)).join(',');if(!seen.has(key)){seen.add(key);points.push(q)}}}}return points}
+function buildAccessCells(paths){
+ const cells={},anchors=accessAnchors(paths),step=ACCESS_GRID_STEP;
+ for(const p of anchors){const latRadius=ACCESS_RADIUS_METERS/110500,lonRadius=latRadius/Math.max(.1,Math.cos(p[0]*Math.PI/180));
+ for(let row=Math.floor((p[0]-latRadius+90)/step);row<=Math.floor((p[0]+latRadius+90)/step);row++)for(let col=Math.floor((p[1]-lonRadius+180)/step);col<=Math.floor((p[1]+lonRadius+180)/step);col++){
+  const key=row+'_'+col;if(cells[key])continue;
+  const south=Number((row*step-90).toFixed(6)),west=Number((col*step-180).toFixed(6)),north=Number((south+step).toFixed(6)),east=Number((west+step).toFixed(6));
+  const corners=[[south,west],[south,east],[north,west],[north,east]];
+  // Every point in an accepted cell stays within 3 km of a sampled point on a road.
+  if(corners.every(q=>accessDistance(p,q)<=ACCESS_RADIUS_METERS-2))cells[key]={south,north,west,east};
+ }
+ }
+ return cells;
+}
+if(typeof module!=='undefined')module.exports={accessCellFor,accessDistance,accessAnchors,buildAccessCells};
+
+const accessGate={allowed:false,admin:false,identityReady:false,generation:0,watch:null,lastFix:null,lastFixAt:0,lastGrantAt:0,grantedCell:null,pending:false,unsubscribers:[]};
+function gateStatus(message){document.getElementById('gateStatus').textContent=message}
+function disconnectMapData(){for(const unsubscribe of accessGate.unsubscribers.splice(0))try{unsubscribe()}catch(e){}firebaseListening=false}
+function clearPrivateMap(){
+ disconnectMapData();
+ if(typeof clearRoute==='function')clearRoute();
+ recording=false;activeTraceIndex=null;studio.dirty=false;studio.selected=null;studio.points=[];studio.roads={};studio.layers=[];studio.handles=[];studio.undo=[];studio.redo=[];studio.base=null;studio.tool='select';editor.base=null;editor.versions=null;editor.undo=[];editor.active=false;editor.selected=null;editor.handles=[];rawRoads={};roadRevisions={};remotePlaces=[];SEED_TRACK=[];SEED_POINTS=[];
+ state={traces:[],points:[],blockedEdges:[],recordedCount:0,drawnRoadIds:[],remoteRoadIds:[]};pointLayers=[];roadLayers=[];
+ if(blockStartMarker)map.removeLayer(blockStartMarker);if(blockEndMarker)map.removeLayer(blockEndMarker);if(blockPreviewLayer)map.removeLayer(blockPreviewLayer);blockStartMarker=blockEndMarker=blockPreviewLayer=null;blockTraceIndex=null;blockMode=false;editingBlockGroup=null;
+ document.getElementById('blockEditor').classList.remove('on');document.body.classList.remove('editing-block');
+ for(const layer of [gpsNav.remainingLine,gpsNav.remainingBorder,gpsNav.travelledLine])if(layer)layer.setLatLngs([]);gpsNav.remainingLine=null;gpsNav.remainingBorder=null;gpsNav.travelledLine=null;map.dragging.enable();map.eachLayer(layer=>map.removeLayer(layer));gpsMarker=null;accuracyLayer=null;gpsNav.arrow=null;gpsNav.slowLayer=null;gpsNav.follow=false;map._gpsCenteredOnce=false;map._accessCentered=false;
+ if(typeof roadView!=='undefined'){if(roadView.map)roadView.map.remove();roadView.map=null;roadView.ready=false;roadView.loading=null;roadView.places.clear();roadView.marker=null;roadView.destinationMarker=null;roadView.roadsHash=null}
+ for(const id of ['pointsList','blocksList','studioRoadList','recordUsers'])document.getElementById(id).innerHTML='';
+ document.getElementById('searchDest').value='';document.getElementById('searchOrigin').value='Minha localização (GPS)';for(const id of ['originSuggestions','destSuggestions']){document.getElementById(id).innerHTML='';document.getElementById(id).hidden=true}document.getElementById('studioName').value='';
+ document.getElementById('origin').innerHTML='<option value="gps">Minha localização (GPS)</option>';document.getElementById('dest').innerHTML='<option value="">Escolha o destino</option><option value="gps">Minha localização (GPS)</option>';
+ try{localStorage.removeItem(STORAGE_KEY);localStorage.removeItem('mapa_alunorte_last_position')}catch(e){}
+}
+function lockMapAccess(message,revoke=true){
+ const wasAllowed=accessGate.allowed;accessGate.allowed=false;accessGate.grantedCell=null;accessGate.lastGrantAt=0;
+ document.body.classList.add('access-locked');document.getElementById('accessGate').hidden=false;gateStatus(message);
+ if(wasAllowed)clearPrivateMap();
+ if(revoke&&window.fbMap?.ready&&!accessGate.admin)window.fbMap.remove(window.fbMap.ref(window.fbMap.db,'presencasMapa/'+window.fbMap.uid)).catch(()=>{});
+}
+function unlockMapAccess(){
+ if(accessGate.allowed)return;accessGate.allowed=true;document.body.classList.remove('access-locked');document.getElementById('accessGate').hidden=true;document.getElementById('permissionOverlay').style.display='none';
+ if(!map.hasLayer(baseMap))baseMap.addTo(map);map.invalidateSize();startFirebaseListeners();
+ if(accessGate.lastFix&&Date.now()-(accessGate.lastFix.timestamp||0)<15000)acceptPosition(accessGate.lastFix,true);
+}
+async function verifyAccessIdentity(){
+ const generation=++accessGate.generation;accessGate.admin=false;accessGate.identityReady=false;editor.authorized=false;
+ lockMapAccess('Verificando autorização…',false);
+ const f=window.fbMap;if(!f?.ready||!f.user){gateStatus('Conectando ao serviço de acesso…');return}
+ try{const snapshot=await f.get(f.ref(f.db,'administradores/'+f.uid));if(generation!==accessGate.generation)return;
+  accessGate.admin=snapshot.val()===true;accessGate.identityReady=true;editor.authorized=accessGate.admin;
+  if(accessGate.admin){unlockMapAccess();return}
+  gateStatus('Acesso restrito à proximidade das vias da refinaria. Valide uma localização atual para continuar.');
+  if(accessGate.lastFix)authorizeMapPosition(accessGate.lastFix);
+ }catch(e){if(generation===accessGate.generation)lockMapAccess('Não foi possível verificar o acesso. Conecte-se à internet e tente novamente.',false)}
+}
+function startAccessLocation(){
+ if(!navigator.geolocation){gateStatus('Este aparelho não oferece localização. Somente o administrador pode entrar sem GPS.');return}
+ gateStatus('Validando localização atual…');
+ if(accessGate.watch!==null)navigator.geolocation.clearWatch(accessGate.watch);
+ accessGate.watch=navigator.geolocation.watchPosition(p=>{
+  accessGate.lastFix=p;accessGate.lastFixAt=performance.now();
+  if(accessGate.admin){acceptPosition(p,false);return}
+  authorizeMapPosition(p);
+ },e=>{if(!accessGate.admin)lockMapAccess(e.code===1?'Sem permissão de localização. Acesso ao mapa bloqueado.':'Sem localização atual confirmada. Acesso ao mapa bloqueado.');},{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+}
+async function authorizeMapPosition(p){
+ if(accessGate.admin){unlockMapAccess();return}
+ if(!accessGate.identityReady||!window.fbMap?.ready||accessGate.pending)return;
+ const lat=p.coords.latitude,lon=p.coords.longitude,accuracy=p.coords.accuracy;
+ if(!Number.isFinite(lat)||!Number.isFinite(lon)||!Number.isFinite(accuracy)||accuracy<=0||accuracy>100||!p.timestamp||Math.abs(Date.now()-p.timestamp)>15000){lockMapAccess('GPS impreciso ou desatualizado. Aguarde uma localização atual com precisão de até 100 m.');return}
+ const cell=accessCellFor(lat,lon);
+ if(accessGate.allowed&&cell===accessGate.grantedCell&&performance.now()-accessGate.lastGrantAt<10000){acceptPosition(p,false);return}
+ const f=window.fbMap,generation=accessGate.generation;accessGate.pending=true;
+ try{
+  await f.set(f.ref(f.db,'presencasMapa/'+f.uid),{lat,lon,accuracy,cell,updatedAt:f.serverTimestamp()});
+  f.onDisconnect(f.ref(f.db,'presencasMapa/'+f.uid)).remove().catch(()=>{});
+  if(generation!==accessGate.generation)return;
+  const latest=accessGate.lastFix;if(!latest||Math.abs(Date.now()-latest.timestamp)>15000)return;
+  if(accessCellFor(latest.coords.latitude,latest.coords.longitude)!==cell)return;
+  accessGate.lastGrantAt=performance.now();accessGate.grantedCell=cell;unlockMapAccess();acceptPosition(latest,false);
+ }catch(e){if(generation===accessGate.generation)lockMapAccess(e.code&&String(e.code).toLowerCase().includes('permission')?'Fora da área permitida. O mapa e o cálculo de rotas estão bloqueados.':'Não foi possível confirmar a proximidade no servidor. O mapa permanece bloqueado.');}
+ finally{accessGate.pending=false;if(generation===accessGate.generation&&accessGate.lastFix&&accessCellFor(accessGate.lastFix.coords.latitude,accessGate.lastFix.coords.longitude)!==cell)authorizeMapPosition(accessGate.lastFix)}
+}
+function listenMap(path,callback){const f=window.fbMap;const unsubscribe=f.onValue(f.ref(f.db,path),snapshot=>{if(accessGate.allowed)callback(snapshot)},()=>{if(!accessGate.admin)lockMapAccess('A autorização de acesso expirou. Confirme novamente a localização.');else gateStatus('Falha de acesso ao banco. Confira as regras do administrador.')});accessGate.unsubscribers.push(unsubscribe)}
+async function syncAccessCoverage(){
+ if(!accessGate.admin||!editor.authorized)return;
+ const paths=[SEED_TRACK,...Object.entries(rawRoads).map(([id,r])=>roadRevisions[id]?.points||r.points||[]),...Object.values(studio.roads).map(studioGeometry)];
+ const cells=buildAccessCells(paths);if(!Object.keys(cells).length)throw Error('Não há vias suficientes para atualizar a área de acesso.');
+ const f=window.fbMap;await f.set(f.ref(f.db,'mapaAcesso'),{cells,radius:3000,step:ACCESS_GRID_STEP,updatedAt:new Date().toISOString()});
+}
+document.getElementById('gateGps').onclick=startAccessLocation;
+document.getElementById('gateAdminButton').onclick=()=>{document.getElementById('gateAdminForm').hidden=!document.getElementById('gateAdminForm').hidden};
+document.getElementById('gateAdminForm').onsubmit=async e=>{e.preventDefault();const password=document.getElementById('gatePassword');try{if(!window.fbMap?.ready)throw Error();await window.fbMap.login(document.getElementById('gateEmail').value.trim(),password.value);await verifyAccessIdentity();if(!accessGate.admin)gateStatus('Esta conta não tem permissão de administrador. O acesso comum exige localização próxima.')}catch(e){gateStatus('Não foi possível entrar. Confira a conta, a senha e a conexão.')}finally{password.value=''}};
+window.addEventListener('map-auth-changed',verifyAccessIdentity);
+setInterval(()=>{if(accessGate.allowed&&!accessGate.admin&&(performance.now()-accessGate.lastFixAt>15000||performance.now()-accessGate.lastGrantAt>40000))lockMapAccess('A confirmação de localização expirou. Aguarde um novo sinal GPS.');},2000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!accessGate.admin)lockMapAccess('Valide sua localização atual para voltar ao mapa.');else if(!document.hidden&&accessGate.watch!==null)startAccessLocation()});
+
 let firebaseListening=false;
-let rawRoads={},roadRevisions={};
+let rawRoads={},roadRevisions={},remotePlaces=[];
 function studioGeometry(road){
  const p=road.controls||[];if(road.type!=='curve'||p.length!==3)return p.map(x=>x.slice());
  const out=[];for(let i=0;i<=32;i++){const t=i/32,u=1-t;out.push([u*u*p[0][0]+2*u*t*p[1][0]+t*t*p[2][0],u*u*p[0][1]+2*u*t*p[1][1]+t*t*p[2][1]])}return out;
@@ -670,20 +769,21 @@ function rebuildRoads(){
 }
 
 function firebaseReady(){
- return window.fbMap && window.fbMap.ready;
+ return accessGate.allowed && window.fbMap && window.fbMap.ready;
 }
 
 function startFirebaseListeners(){
  if(firebaseListening || !firebaseReady()) return;
  firebaseListening=true;
  const f=window.fbMap;
- f.onValue(f.ref(f.db,"mapa/refinamentos"),snap=>{roadRevisions=snap.val()||{};rebuildRoads()});
+ listenMap('mapa/base',snap=>{const base=snap.val()||{};SEED_TRACK=Array.isArray(base.track)?base.track:[];SEED_POINTS=Array.isArray(base.points)?base.points:[];state.points=[...SEED_POINTS,...remotePlaces];rebuildRoads();if(!map._accessCentered&&SEED_TRACK.length&&(accessGate.admin||!map._gpsCenteredOnce)){map.fitBounds(L.latLngBounds(SEED_TRACK),{padding:[25,25]});map._accessCentered=true}});
+ listenMap("mapa/refinamentos",snap=>{roadRevisions=snap.val()||{};rebuildRoads()});
 
- f.onValue(f.ref(f.db,"mapa/ruas"), snap=>{
+ listenMap("mapa/ruas", snap=>{
    rawRoads=snap.val()||{};rebuildRoads();
  });
 
- f.onValue(f.ref(f.db,"mapa/pontos"), snap=>{
+ listenMap("mapa/pontos", snap=>{
    const v=snap.val()||{};
    const remote=Object.entries(v).map(([id,x])=>({
      id:"fb-"+id,
@@ -696,11 +796,11 @@ function startFirebaseListeners(){
    })).filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon));
 
    // Preserve original GPX points and merge shared points.
-   state.points=[...SEED_POINTS,...remote];
+   remotePlaces=remote;state.points=[...SEED_POINTS,...remote];
    renderAll();
  });
 
- f.onValue(f.ref(f.db,"mapa/bloqueios"), snap=>{
+ listenMap("mapa/bloqueios", snap=>{
    const v=snap.val()||{};
    const expanded=[];
    Object.entries(v).forEach(([id,x])=>{
@@ -1025,6 +1125,7 @@ function checkAutomaticReroute(p,match){
 }
 const cleanNav={started:false,view:"top",gpsDestination:null,frame:null};
 function route(auto=false){
+ if(!accessGate.allowed)return false;
  if(studio.dirty){document.getElementById("routeInfo").textContent="Salve ou descarte o desenho antes de calcular uma rota.";return}
  gpsNav.path=null;document.getElementById("navProgress").textContent="";
  if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("navBanner").style.display="none";lastRouteUpdate=Date.now();
@@ -1055,6 +1156,7 @@ function route(auto=false){
 }
 function clearRoute(){stopGuideVoice();resetTripMetrics();resetDeviation();rerouting.waiting=false;rerouting.reason='';rerouting.lastAttempt=0;document.getElementById('navHint').textContent='';document.getElementById("navBanner").classList.remove("turn-banner");if(typeof cleanNav!=="undefined"){cleanNav.started=false;document.body.classList.remove("navigating");document.getElementById("stopNavigation").hidden=true;document.getElementById("btnStartNavigation").hidden=true;setNavigationView("top")}navigationActive=false;gpsNav.path=null;document.getElementById("navProgress").textContent="";document.getElementById("navBanner").style.display="none";if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}document.getElementById("routeInfo").textContent="Escolha um destino."}
 function exportMap(){
+ if(!accessGate.allowed)return;
  const blob=new Blob([JSON.stringify({...state,streetStudio:studioModel(),rawRoads,roadRevisions},null,2)],{type:"application/json"}),a=document.createElement("a");
  a.href=URL.createObjectURL(blob);a.download="mapa-alunorte-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(a.href)
 }
@@ -1121,7 +1223,7 @@ async function saveEdit(){
  return next;
  },{applyLocally:false});
  if(!result.committed){editMessage('Outra revisão foi salva enquanto você editava. Cancele e tente novamente.');return}
- roadRevisions=result.snapshot.val()||{};endEdit();editMessage('Revisão salva e compartilhada.');
+ roadRevisions=result.snapshot.val()||{};await syncAccessCoverage();endEdit();editMessage('Revisão salva e compartilhada.');
  }catch(e){editMessage('Falha ao salvar. O rascunho foi mantido. Confira conexão e permissões do Firebase.')}finally{editor.busy=false;if(editor.active&&editor.selected!==null)selectEditRoad(editor.selected)}
 }
 document.getElementById('btnAdmin').onclick=()=>{document.getElementById('adminLogin').hidden=!document.getElementById('adminLogin').hidden};
@@ -1142,6 +1244,7 @@ function finishStudio(){if(!canDraw())return;const min=studio.tool==='curve'?3:2
 function handleStudioClick(e){if(studio.tool==='select'||!canDraw())return;if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(studio.tool==='freehand')return;studio.points.push([e.latlng.lat,e.latlng.lng]);if((studio.tool==='line'&&studio.points.length===2)||(studio.tool==='curve'&&studio.points.length===3))finishStudio();else renderStudio()}
 function selectStudio(id){if(!canDraw()||studio.tool!=='select')return;studio.selected=id;studio.node=null;renderStudio();studioStatus('Arraste os pontos laranja. O marcador ↔ move a rua inteira.')}
 function renderStudio(){
+ if(!accessGate.allowed)return;
  map.getPane("drawnPane").style.display=showDrawn?"":"none";
  studio.layers.forEach(l=>map.removeLayer(l));studio.layers=[];studio.handles.forEach(l=>map.removeLayer(l));studio.handles=[];syncStudioGeometry();
  const surfaces=[],closures=[];
@@ -1171,7 +1274,7 @@ function persistVisibility(){try{localStorage.setItem('mapa-record-visibility',J
 async function saveStudio(){
  if(!canDraw())return;if(studio.points.length){studioStatus('Conclua ou cancele o desenho atual antes de salvar.');return}if(!studio.dirty){studioStatus('Nenhuma alteração para salvar.');return}
  const f=window.fbMap,model=studioModel();studio.saving=true;renderStudio();studioStatus('Salvando ruas…');
- try{const result=await f.runTransaction(f.ref(f.db,'mapa/refinamentos/_studio'),current=>{if(JSON.stringify(current||{})!==studio.base)return;return {...model,updatedBy:f.uid,updatedAt:new Date().toISOString()}},{applyLocally:false});if(!result.committed){studioStatus('Outra pessoa publicou uma revisão. Exporte seu mapa para guardar o rascunho; depois descarte e recarregue para atualizar.');return}roadRevisions._studio=result.snapshot.val();studio.base=JSON.stringify(result.snapshot.val());studio.dirty=false;studio.undo=[];studio.redo=[];studioStatus('Ruas salvas. O cálculo usa somente ruas desenhadas.');clearRoute()}catch(e){studioStatus('Falha ao salvar: '+(e.code||'conexão indisponível')+'. O rascunho continua aberto.')}finally{studio.saving=false;if(!studio.dirty)rebuildRoads();else renderStudio()}
+ try{const result=await f.runTransaction(f.ref(f.db,'mapa/refinamentos/_studio'),current=>{if(JSON.stringify(current||{})!==studio.base)return;return {...model,updatedBy:f.uid,updatedAt:new Date().toISOString()}},{applyLocally:false});if(!result.committed){studioStatus('Outra pessoa publicou uma revisão. Exporte seu mapa para guardar o rascunho; depois descarte e recarregue para atualizar.');return}roadRevisions._studio=result.snapshot.val();await syncAccessCoverage();studio.base=JSON.stringify(result.snapshot.val());studio.dirty=false;studio.undo=[];studio.redo=[];studioStatus('Ruas salvas. O cálculo usa somente ruas desenhadas.');clearRoute()}catch(e){studioStatus('Falha ao salvar: '+(e.code||'conexão indisponível')+'. O rascunho continua aberto.')}finally{studio.saving=false;if(!studio.dirty)rebuildRoads();else renderStudio()}
 }
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setStudioTool(b.dataset.tool));
 document.getElementById('studioFinish').onclick=finishStudio;
@@ -1408,6 +1511,7 @@ function updateTurnBanner(frame){
  sub.textContent=(frame.preview?'Prévia • ':'')+gpsNav.destination+' • '+distText(remaining);copy.append(main,sub);banner.append(arrow,copy);
 }
 async function loadRoadView(){
+ if(!accessGate.allowed)return;
  if(roadView.map)return;if(roadView.loading)return roadView.loading;
  roadView.loading=(async()=>{
  if(!window.maplibregl){await new Promise((resolve,reject)=>{let script=document.getElementById('maplibreScript');if(script)script.remove();script=document.createElement('script');script.id='maplibreScript';script.src='https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js';script.onload=resolve;script.onerror=()=>reject(Error('Não foi possível carregar a visão inclinada.'));document.head.appendChild(script)})}
@@ -1430,6 +1534,7 @@ async function loadRoadView(){
  return roadView.loading;
 }
 function renderRoadView(){
+ if(!accessGate.allowed)return;
  if(!roadView.ready||cleanNav.view==='top')return;const m=roadView.map,frame=roadViewFrame();m.resize();
  const roads=roadFeatures(studio.roads),hash=JSON.stringify(roads);if(hash!==roadView.roadsHash){m.getSource('drawn-streets').setData(roads);roadView.roadsHash=hash}
  const path=gpsNav.path||[];m.getSource('route-full').setData(lineFeature(path));m.getSource('route-done').setData(lineFeature(frame.match?.done||[]));m.getSource('route-ahead').setData(lineFeature(frame.match?.ahead||path));
@@ -1487,10 +1592,10 @@ showLocations=true;studio.showRecorded=false;document.getElementById('showLocati
 renderAll();
 renderRecordUsers();
 updateRecordingUi();
-checkPermissionState();
-if(firebaseReady()) startFirebaseListeners();
+if(accessGate.allowed)checkPermissionState();
+if(window.fbMap?.ready)verifyAccessIdentity();
 const all=[...SEED_TRACK,...SEED_POINTS.map(p=>[p.lat,p.lon])];
-if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setView([-1.5,-48.7],13);
+if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[25,25]});else map.setView([0,0],2);
 </script>
 </body>
 </html>
