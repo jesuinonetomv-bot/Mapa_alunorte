@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mapa Alunorte</title>
-<meta name="mapa-revision" content="web-f0eb4647a77a0d47">
+<meta name="mapa-revision" content="web-b5c10a79f7165a33">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--dark:#444d55;--accent:#43807a;--danger:#b95946;--road:#566168;--route:#1976d2}
@@ -131,11 +131,16 @@ button{transition:background .15s,box-shadow .15s}button:focus-visible{outline:3
 #previewStart{display:none}.route-preview:not(.navigating) #previewStart{display:block;position:absolute;right:14px;bottom:calc(34px + env(safe-area-inset-bottom));z-index:1130;min-height:48px;border-radius:24px;padding:0 15px;background:#087f96;color:#fff;font-size:14px;font-weight:700;box-shadow:0 3px 12px #142f5320}.route-preview:not(.navigating) #navProgress{padding-left:72px;padding-right:96px}.route-preview .trip-time{font-size:25px}.route-preview .trip-detail{font-size:13px}.route-preview .trip-note{color:#617383}.route-preview #tripSpeed{display:none}
 @media(min-width:801px){.route-preview:not(.navigating) #previewStart{left:354px;right:auto;bottom:52px}}
 @media(max-height:620px){.route-preview:not(.navigating) #previewStart{bottom:20px}}
+</style><style id="anchored-navigation-places">
+/* MapLibre owns marker translation; never put its root in document flow. */
+.maplibregl-marker.navigation-place{position:absolute;top:0;left:0;transition:none!important;margin:0;will-change:transform}
+#perspectiveMap .navigation-place-icon{box-shadow:none}
+#perspectiveMap .navigation-place-label{box-shadow:none;background:#ffffffe8}
 </style></head>
 <body class="access-locked">
 <section id="accessGate" role="region" aria-label="Acesso restrito ao mapa"><div class="gate-card"><h1>Mapa Alunorte</h1><h2>Acesso restrito</h2><p>O mapa e as rotas são liberados somente com localização atual próxima das vias da refinaria, em uma área de aproximadamente 3 km.</p><p id="gateStatus" role="status">Conectando ao serviço de acesso…</p><button id="gateGps">Validar minha localização</button><button id="gateAdminButton" class="dark">Entrar como administrador</button><form id="gateAdminForm" hidden><input id="gateEmail" type="email" autocomplete="username" placeholder="E-mail do administrador" required aria-label="E-mail do administrador"><input id="gatePassword" type="password" autocomplete="current-password" placeholder="Senha" required aria-label="Senha do administrador"><button>Entrar</button></form><small>Administradores autenticados podem entrar de qualquer localização.</small></div></section>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.31 Navegação</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.32 Navegação</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -1574,7 +1579,7 @@ async function loadRoadView(){
  const el=document.createElement('div');el.className='navigation-location';el.innerHTML='<svg viewBox="0 0 48 48" width="46" height="46"><path d="M24 3 L43 42 Q24 32 5 42 Z" fill="#2586f8" stroke="white" stroke-width="4"/></svg>';
  roadView.marker=new maplibregl.Marker({element:el,rotationAlignment:'map',pitchAlignment:'viewport'}).setLngLat([frame.center[1],frame.center[0]]).addTo(roadView.map);
  roadView.map.on('dragstart',()=>{gpsNav.follow=false;document.getElementById('btnFollow').textContent='◎ Recentralizar'});roadView.map.on('rotatestart',e=>{if(e.originalEvent)gpsNav.follow=false});
- roadView.ready=true;roadView.forceCamera=true;roadView.failed=false;roadView.map.on('move',layoutNavigationPlaceLabels);syncNavigationPlaces();renderRoadView();
+ roadView.ready=true;roadView.forceCamera=true;roadView.failed=false;roadView.map.on('move',layoutNavigationPlaceLabels);roadView.map.on('moveend',layoutNavigationPlaceLabels);syncNavigationPlaces();renderRoadView();
  })().catch(err=>{if(roadView.map){roadView.map.remove();roadView.map=null}roadView.places.clear();roadView.marker=null;roadView.destinationMarker=null;roadView.roadsHash=null;roadView.ready=false;roadView.loading=null;roadView.failed=true;setNavigationView('top');document.getElementById('navHint').textContent=err.message+' A vista superior continua disponível.';throw err});
  return roadView.loading;
 }
@@ -1598,22 +1603,22 @@ function syncNavigationPlaces(){
  if(!showLocations){for(const marker of roadView.places.values())marker.getElement().style.display='none';return}
  const ids=new Set();for(const p of state.points){if(!Number.isFinite(p.lat)||!Number.isFinite(p.lon))continue;ids.add(p.id);let marker=roadView.places.get(p.id);
  if(!marker){const el=document.createElement('div');el.className='navigation-place';el.tabIndex=0;el.setAttribute('role','button');
- const icon=document.createElement('span');icon.className='navigation-place-icon';const label=document.createElement('span');label.className='navigation-place-label';el.append(icon,label);
+ const icon=document.createElement('span');icon.className='navigation-place-icon';const label=document.createElement('span');label.className='navigation-place-label';label.hidden=true;el.append(icon,label);
  const open=()=>{const current=state.points.find(x=>x.id===p.id);if(!current)return;const popup=document.createElement('div'),name=document.createElement('b'),category=document.createElement('p'),destination=document.createElement('button');name.textContent=current.name;category.textContent=current.category||'Local';destination.textContent='Ir para este local';destination.onclick=()=>{chooseEndpoint('dest',current.id,current.name);openPlanner()};popup.append(name,category,destination);new maplibregl.Popup({offset:18,closeButton:true}).setLngLat([current.lon,current.lat]).setDOMContent(popup).addTo(m)};
  el.onclick=e=>{e.stopPropagation();open()};el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
- marker=new maplibregl.Marker({element:el,anchor:'center',pitchAlignment:'viewport',rotationAlignment:'viewport'}).setLngLat([p.lon,p.lat]).addTo(m);roadView.places.set(p.id,marker);
+ marker=new maplibregl.Marker({element:el,anchor:'center',pitchAlignment:'viewport',rotationAlignment:'viewport',subpixelPositioning:true}).setLngLat([p.lon,p.lat]).addTo(m);roadView.places.set(p.id,marker);
  }
- marker.setLngLat([p.lon,p.lat]);const el=marker.getElement();el.setAttribute('aria-label',p.name);el.title=p.name;el.querySelector('.navigation-place-icon').textContent=navigationPlaceIcon(p.category,p.name);el.querySelector('.navigation-place-label').textContent=p.name;el.style.display='';
+ const position=marker.getLngLat();if(position.lng!==p.lon||position.lat!==p.lat)marker.setLngLat([p.lon,p.lat]);const el=marker.getElement();el.setAttribute('aria-label',p.name);el.title=p.name;el.querySelector('.navigation-place-icon').textContent=navigationPlaceIcon(p.category,p.name);el.querySelector('.navigation-place-label').textContent=p.name;el.style.display='';
  }
  for(const [id,marker] of roadView.places)if(!ids.has(id)){marker.remove();roadView.places.delete(id)}
  layoutNavigationPlaceLabels();
 }
 function layoutNavigationPlaceLabels(){
  if(!roadView.ready)return;const m=roadView.map,canvas=m.getCanvas(),occupied=[],target=document.getElementById('dest').value;
- const points=[...state.points].sort((a,b)=>(b.id===target?1:0)-(a.id===target?1:0));
+ const moving=m.isMoving();const points=[...state.points].sort((a,b)=>(b.id===target?1:0)-(a.id===target?1:0)||String(a.id).localeCompare(String(b.id)));
  for(const p of points){const marker=roadView.places.get(p.id);if(!marker)continue;const el=marker.getElement(),label=el.querySelector('.navigation-place-label');if(!showLocations){el.style.display='none';continue}
  const px=m.project([p.lon,p.lat]),visible=Number.isFinite(px.x)&&Number.isFinite(px.y)&&px.x>=-30&&px.x<=canvas.clientWidth+30&&px.y>=-30&&px.y<=canvas.clientHeight+30;
- el.style.display=visible?'':'none';if(!visible)continue;
+ el.style.display=visible?'':'none';if(!visible||moving)continue;
  const width=Math.min(170,Math.max(60,p.name.length*6)),box={x:px.x+18,y:px.y-12,w:width,h:25};const overlap=occupied.some(r=>box.x<r.x+r.w+8&&box.x+box.w+8>r.x&&box.y<r.y+r.h+5&&box.y+box.h+5>r.y);
  const show=(m.getZoom()>=16.5||p.id===target)&&!overlap;label.hidden=!show;if(show)occupied.push(box);
  }
