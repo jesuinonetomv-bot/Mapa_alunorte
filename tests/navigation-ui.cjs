@@ -11,4 +11,8 @@ assert.equal(elements.navProgress.children[0].textContent,'2 min');assert(elemen
 context.syncQuickVoice();assert.equal(elements.quickVoice['aria-pressed'],'false');assert.equal(elements.quickVoice['aria-label'],'Silenciar orientações');
 context.voiceGuide.enabled=false;context.syncQuickVoice();assert.equal(elements.quickVoice['aria-pressed'],'true');assert.equal(elements.quickVoice['aria-label'],'Ativar orientações');
 context.stopTripEstimate('Você chegou');assert.equal(elements.navProgress.textContent,'Você chegou');assert.equal(elements.nextManeuver.textContent,'');assert.equal(elements.tripSpeed.textContent,'—');
-console.log('PASS: trip card ETA/distance, speed conversion, partial closure warning, shared mute state and arrival clearing');
+const classes=new Set();document.body={classList:{add:name=>classes.add(name)}};
+vm.runInContext(s.slice(s.indexOf('function showRoutePreview('),s.indexOf("document.getElementById('previewStart').onclick")),context);
+elements.navProgress.children=[];context.showRoutePreview(1400);assert(classes.has('route-preview'));assert.equal(elements.stopNavigation.hidden,false);assert.equal(elements.navProgress.children[0].textContent,'1400 m');assert.equal(elements.navProgress.children[1].textContent,'Prévia do trajeto');
+assert(s.includes('classList.remove("navigating","route-preview")'),'clearing a route must restore browse layout');
+console.log('PASS: trip card ETA/distance, speed conversion, partial closure warning, shared mute state and arrival clearing and shared preview cockpit');
