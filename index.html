@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mapa Alunorte</title>
-<meta name="mapa-revision" content="web-b5c10a79f7165a33">
+<meta name="mapa-revision" content="web-93edbda826823d46">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--dark:#444d55;--accent:#43807a;--danger:#b95946;--road:#566168;--route:#1976d2}
@@ -136,11 +136,13 @@ button{transition:background .15s,box-shadow .15s}button:focus-visible{outline:3
 .maplibregl-marker.navigation-place{position:absolute;top:0;left:0;transition:none!important;margin:0;will-change:transform}
 #perspectiveMap .navigation-place-icon{box-shadow:none}
 #perspectiveMap .navigation-place-label{box-shadow:none;background:#ffffffe8}
+</style><style>
+#pointEditor{position:absolute;z-index:1950;bottom:12px;left:12px;width:min(420px,calc(100% - 24px));max-height:65dvh;overflow:auto;padding:18px;border-radius:22px;background:#fff;box-shadow:0 6px 32px #142f5340;color:#142f53}#pointEditor label{display:block;font-size:13px;margin:9px 0}#pointEditor input{width:100%;min-height:42px;margin-top:4px}#pointEditor .coordinates{display:grid;grid-template-columns:1fr 1fr;gap:10px}#pointEditorStatus{font-size:13px;line-height:1.4}.point-popup-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.point-popup-actions button{min-height:42px;font-size:13px}.point-delete{background:#b8423e!important;color:#fff!important}
 </style></head>
 <body class="access-locked">
 <section id="accessGate" role="region" aria-label="Acesso restrito ao mapa"><div class="gate-card"><h1>Mapa Alunorte</h1><h2>Acesso restrito</h2><p>O mapa e as rotas são liberados somente com localização atual próxima das vias da refinaria, em uma área de aproximadamente 3 km.</p><p id="gateStatus" role="status">Conectando ao serviço de acesso…</p><button id="gateGps">Validar minha localização</button><button id="gateAdminButton" class="dark">Entrar como administrador</button><form id="gateAdminForm" hidden><input id="gateEmail" type="email" autocomplete="username" placeholder="E-mail do administrador" required aria-label="E-mail do administrador"><input id="gatePassword" type="password" autocomplete="current-password" placeholder="Senha" required aria-label="Senha do administrador"><button>Entrar</button></form><small>Administradores autenticados podem entrar de qualquer localização.</small></div></section>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.32 Navegação</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.33 Navegação</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -246,6 +248,11 @@ button{transition:background .15s,box-shadow .15s}button:focus-visible{outline:3
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<section id="pointEditor" role="dialog" aria-labelledby="pointEditorTitle" hidden>
+<div class="sheet-heading"><b id="pointEditorTitle">Editar ponto</b><button type="button" id="closePointEditor" aria-label="Fechar edição do ponto">×</button></div>
+<form id="pointEditorForm"><label>Nome<input id="editPointName" required maxlength="120"></label><label>Categoria<input id="editPointCategory" required maxlength="80" list="pointCategories"></label><datalist id="pointCategories"><option>Subestação</option><option>Ambulatório</option><option>Prédio</option><option>Restaurante</option><option>Entrada</option><option>Sala de Automação</option><option>Local</option></datalist>
+<div class="coordinates"><label>Latitude<input id="editPointLat" type="number" step="any" min="-90" max="90" required></label><label>Longitude<input id="editPointLon" type="number" step="any" min="-180" max="180" required></label></div>
+<button type="button" id="movePointOnMap">Ajustar posição no mapa</button><p id="pointEditorStatus" role="status"></p><div class="row"><button id="savePointEdit" type="submit">Salvar alterações</button><button id="deletePointEdit" type="button" class="point-delete">Excluir ponto</button></div></form></section>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
@@ -306,6 +313,8 @@ const studio={roads:{},official:true,base:null,dirty:false,tool:"select",selecte
 const editor={authorized:false,active:false,selected:null,handles:[],undo:[],base:null,versions:null,busy:false};
 let SEED_TRACK=[];
 let SEED_POINTS=[];
+let pointOverrides={};
+const pointEditor={id:null,revision:0,marker:null,busy:false,popup:null};
 const STORAGE_KEY = "mapa_alunorte_v05";
 
 const map=L.map("map",{zoomControl:false});
@@ -599,17 +608,64 @@ function renderRoads(){
 function markerIcon(cat,name=''){
  return L.divIcon({className:'',html:'<div class="navigation-place"><span class="navigation-place-icon">'+navigationPlaceIcon(cat,name)+'</span></div>',iconSize:[27,27],iconAnchor:[13,13]})
 }
+function canManagePoints(){return !!(accessGate.allowed&&accessGate.admin&&editor.authorized&&window.fbMap?.user&&!window.fbMap.user.isAnonymous)}
+function pointOverrideKey(id){return encodeURIComponent(String(id)).replace(/\./g,'%2E')}
+function mergedPoints(seed,remote,overrides){return [...seed,...remote].flatMap(p=>{const edit=overrides[pointOverrideKey(p.id)];if(edit?.deleted===true)return [];return [{...p,...(edit?{name:edit.name??p.name,category:edit.category??p.category,lat:edit.lat??p.lat,lon:edit.lon??p.lon}:{}),pointRevision:Number(edit?.revision)||0}]})}
+function refreshSharedPoints(){
+ const old=state.points;state.points=mergedPoints(SEED_POINTS,remotePlaces,pointOverrides);
+ for(const kind of ['origin','dest']){const select=document.getElementById(kind),id=select.value;if(!id||id==='gps')continue;const point=state.points.find(p=>p.id===id),before=old.find(p=>p.id===id);const input=document.getElementById(kind==='origin'?'searchOrigin':'searchDest');
+ if(!point){clearRoute();select.value=kind==='origin'?'gps':'';input.value=kind==='origin'?'Minha localização (GPS)':'';delete input.dataset.chosen;document.getElementById('routeInfo').textContent='O ponto selecionado foi excluído. Escolha outro local.'}
+ else{input.value=point.name;if(kind==='dest'&&gpsNav.path)gpsNav.destination=point.name;if(before&&(before.lat!==point.lat||before.lon!==point.lon)){clearRoute();document.getElementById('routeInfo').textContent='A posição do ponto foi alterada. Calcule a rota novamente.'}}
+ }
+}
+function createPointPopup(id){
+ const point=state.points.find(p=>p.id===id),root=document.createElement('div');if(!point)return root;
+ const name=document.createElement('b'),category=document.createElement('p'),actions=document.createElement('div');name.textContent=point.name;category.textContent=point.category||'Local';actions.className='point-popup-actions';root.append(name,category,actions);
+ const go=document.createElement('button');go.textContent='Ir para este local';go.onclick=()=>{chooseEndpoint('dest',id,point.name);openPlanner()};actions.append(go);
+ if(canManagePoints()){const edit=document.createElement('button'),remove=document.createElement('button');edit.textContent='Editar';edit.onclick=()=>openPointEditor(id);remove.textContent='Excluir';remove.className='point-delete';remove.onclick=()=>deleteManagedPoint(id);actions.append(edit,remove)}return root;
+}
+function closePointEditor(){if(pointEditor.marker){map.removeLayer(pointEditor.marker);pointEditor.marker=null}document.getElementById('pointEditor').hidden=true;pointEditor.id=null;if(pointEditor.popup){pointEditor.popup.remove();pointEditor.popup=null}}
+function openPointEditor(id){
+ if(!canManagePoints()||pointEditor.busy)return;const point=state.points.find(p=>p.id===id);if(!point)return;
+ closePointEditor();map.closePopup();closePlanner();document.querySelector('aside').hidden=true;pointEditor.id=id;pointEditor.revision=point.pointRevision||0;
+ document.getElementById('editPointName').value=point.name;document.getElementById('editPointCategory').value=point.category||'Local';document.getElementById('editPointLat').value=point.lat;document.getElementById('editPointLon').value=point.lon;document.getElementById('pointEditorStatus').textContent='Altere os dados ou ajuste a posição no mapa.';document.getElementById('pointEditor').hidden=false;document.getElementById('editPointName').focus();
+}
+function validatePointEdit(fields){const name=String(fields.name||'').trim(),category=String(fields.category||'').trim(),lat=Number(fields.lat),lon=Number(fields.lon);if(!name||name.length>120||!category||category.length>80||String(fields.lat).trim()===''||String(fields.lon).trim()===''||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)throw Error('Preencha nome, categoria e coordenadas válidas.');return {name,category,lat,lon}}
+async function writePointOverride(id,fields,revision){
+ if(!canManagePoints()||!firebaseReady())throw Error('Entre como administrador para alterar pontos.');const f=window.fbMap;
+ const result=await f.runTransaction(f.ref(f.db,'mapa/base/pointOverrides/'+pointOverrideKey(id)),current=>{if(!canManagePoints()||(Number(current?.revision)||0)!==revision)return;return {...fields,revision:revision+1,updatedBy:f.user.uid,updatedAt:f.serverTimestamp()}});
+ if(!result.committed)throw Error('Este ponto foi alterado por outro administrador. Feche e abra novamente para atualizar.');
+ if(accessGate.allowed){pointOverrides[pointOverrideKey(id)]=result.snapshot.val();refreshSharedPoints();renderPoints()}return true;
+}
+async function saveManagedPoint(e){
+ e.preventDefault();if(pointEditor.busy||!canManagePoints()||!pointEditor.id)return;
+ try{const fields=validatePointEdit({name:document.getElementById('editPointName').value,category:document.getElementById('editPointCategory').value,lat:document.getElementById('editPointLat').value,lon:document.getElementById('editPointLon').value});pointEditor.busy=true;document.getElementById('savePointEdit').disabled=true;document.getElementById('pointEditorStatus').textContent='Salvando…';await writePointOverride(pointEditor.id,fields,pointEditor.revision);closePointEditor();map.closePopup()}
+ catch(error){document.getElementById('pointEditorStatus').textContent=error.message||'Não foi possível salvar. Confira sua conexão.'}finally{pointEditor.busy=false;document.getElementById('savePointEdit').disabled=false}
+}
+async function deleteManagedPoint(id){
+ if(!canManagePoints()||pointEditor.busy)return;const point=state.points.find(p=>p.id===id);if(!point)return;if(!confirm('Excluir o ponto "'+point.name+'" do mapa compartilhado?'))return;
+ pointEditor.busy=true;try{await writePointOverride(id,{deleted:true},point.pointRevision||0);closePointEditor();map.closePopup()}
+ catch(error){alert(error.message||'Não foi possível excluir. Confira sua conexão.')}finally{pointEditor.busy=false}
+}
+document.getElementById('pointEditorForm').onsubmit=saveManagedPoint;
+document.getElementById('closePointEditor').onclick=closePointEditor;
+document.getElementById('deletePointEdit').onclick=()=>deleteManagedPoint(pointEditor.id);
+document.getElementById('movePointOnMap').onclick=()=>{
+ if(!canManagePoints()||pointEditor.busy)return;try{const p=validatePointEdit({name:document.getElementById('editPointName').value,category:document.getElementById('editPointCategory').value,lat:document.getElementById('editPointLat').value,lon:document.getElementById('editPointLon').value});
+ gpsNav.follow=false;setNavigationView('top');if(pointEditor.marker)map.removeLayer(pointEditor.marker);pointEditor.marker=L.marker([p.lat,p.lon],{draggable:true,icon:markerIcon(p.category,p.name),zIndexOffset:2000}).addTo(map);pointEditor.marker.on('dragend',()=>{if(!canManagePoints()){closePointEditor();return}const position=pointEditor.marker.getLatLng();document.getElementById('editPointLat').value=position.lat;document.getElementById('editPointLon').value=position.lng});map.setView([p.lat,p.lon],19);map.panBy([0,map.getSize().y*.22]);document.getElementById('pointEditorStatus').textContent='Arraste o ponto no mapa e toque em Salvar alterações.';}catch(error){document.getElementById('pointEditorStatus').textContent=error.message}
+};
+window.addEventListener('map-auth-changed',()=>{closePointEditor();map.closePopup()});
 function renderPoints(){
  pointLayers.forEach(x=>map.removeLayer(x));pointLayers=[];
  const origin=document.getElementById("origin"),oldOrigin=origin.value;origin.innerHTML='<option value="gps">Minha localização (GPS)</option>';
  const sel=document.getElementById("dest"), old=sel.value;sel.innerHTML='<option value="">Escolha o destino</option><option value="gps">Minha localização (GPS)</option>';
  const list=document.getElementById("pointsList");list.innerHTML="";
  state.points.forEach(p=>{
-   const m=L.marker([p.lat,p.lon],{pane:"locationsPane",icon:markerIcon(p.category,p.name)}).addTo(map).bindPopup("<b>"+esc(p.name)+"</b><br>"+esc(p.category||"Local"));
+   const m=L.marker([p.lat,p.lon],{pane:"locationsPane",icon:markerIcon(p.category,p.name)}).addTo(map).bindPopup(()=>createPointPopup(p.id));
    pointLayers.push(m);
    const o=document.createElement("option");o.value=p.id;o.textContent=p.name;sel.appendChild(o);origin.appendChild(o.cloneNode(true));
    const d=document.createElement("div");d.className="item";d.innerHTML="<b>"+esc(p.name)+"</b><span class='badge'>"+esc(p.category||"Local")+"</span>";
-   d.onclick=()=>{map.setView([p.lat,p.lon],19);m.openPopup()};list.appendChild(d)
+   d.onclick=()=>{document.querySelector('aside').hidden=true;if(cleanNav.view!=='top'&&roadView.ready){roadView.map.easeTo({center:[p.lon,p.lat]});openNavigationPoint(p.id)}else{map.setView([p.lat,p.lon],19);m.openPopup()}};list.appendChild(d)
  });
  if([...sel.options].some(o=>o.value===old))sel.value=old;
  if([...origin.options].some(o=>o.value===oldOrigin))origin.value=oldOrigin;applyLocationFilters()
@@ -703,7 +759,7 @@ const accessGate={allowed:false,admin:false,identityReady:false,generation:0,wat
 function gateStatus(message){document.getElementById('gateStatus').textContent=message}
 function disconnectMapData(){for(const unsubscribe of accessGate.unsubscribers.splice(0))try{unsubscribe()}catch(e){}firebaseListening=false}
 function clearPrivateMap(){
- disconnectMapData();
+ closePointEditor();pointOverrides={};disconnectMapData();
  if(typeof clearRoute==='function')clearRoute();
  recording=false;activeTraceIndex=null;studio.dirty=false;studio.selected=null;studio.points=[];studio.roads={};studio.layers=[];studio.handles=[];studio.undo=[];studio.redo=[];studio.base=null;studio.tool='select';editor.base=null;editor.versions=null;editor.undo=[];editor.active=false;editor.selected=null;editor.handles=[];rawRoads={};roadRevisions={};remotePlaces=[];SEED_TRACK=[];SEED_POINTS=[];
  state={traces:[],points:[],blockedEdges:[],recordedCount:0,drawnRoadIds:[],remoteRoadIds:[]};pointLayers=[];roadLayers=[];
@@ -806,7 +862,7 @@ function startFirebaseListeners(){
  if(firebaseListening || !firebaseReady()) return;
  firebaseListening=true;
  const f=window.fbMap;
- listenMap('mapa/base',snap=>{const base=snap.val()||{};SEED_TRACK=Array.isArray(base.track)?base.track:[];SEED_POINTS=Array.isArray(base.points)?base.points:[];state.points=[...SEED_POINTS,...remotePlaces];rebuildRoads();if(!map._accessCentered&&SEED_TRACK.length&&(accessGate.admin||!map._gpsCenteredOnce)){map.fitBounds(L.latLngBounds(SEED_TRACK),{padding:[25,25]});map._accessCentered=true}});
+ listenMap('mapa/base',snap=>{const base=snap.val()||{};SEED_TRACK=Array.isArray(base.track)?base.track:[];SEED_POINTS=Array.isArray(base.points)?base.points:[];pointOverrides=base.pointOverrides||{};refreshSharedPoints();rebuildRoads();if(!map._accessCentered&&SEED_TRACK.length&&(accessGate.admin||!map._gpsCenteredOnce)){map.fitBounds(L.latLngBounds(SEED_TRACK),{padding:[25,25]});map._accessCentered=true}});
  listenMap("mapa/refinamentos",snap=>{roadRevisions=snap.val()||{};rebuildRoads()});
 
  listenMap("mapa/ruas", snap=>{
@@ -826,7 +882,7 @@ function startFirebaseListeners(){
    })).filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon));
 
    // Preserve original GPX points and merge shared points.
-   remotePlaces=remote;state.points=[...SEED_POINTS,...remote];
+   remotePlaces=remote;refreshSharedPoints();
    renderAll();
  });
 
@@ -1598,13 +1654,16 @@ function requestPerspective(){if(cleanNav.view==='top'||cleanNav.frame)return;cl
 function drawPerspective(){renderRoadView()}
 
 function navigationPlaceIcon(category,name=''){const text=((category||'')+' '+name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase();if(text.includes('ambul')||text.includes('medic'))return '✚';if(text.includes('subesta'))return '⚡';if(text.includes('refeit')||text.includes('restaur'))return '🍴';if(text.includes('remot')||text.includes('controle'))return '▣';return '●'}
+function openNavigationPoint(id){
+ const point=state.points.find(p=>p.id===id);if(!point||!roadView.ready)return;if(pointEditor.popup)pointEditor.popup.remove();pointEditor.popup=new maplibregl.Popup({offset:18,closeButton:true}).setLngLat([point.lon,point.lat]).setDOMContent(createPointPopup(id)).addTo(roadView.map);
+}
 function syncNavigationPlaces(){
  if(!roadView.ready)return;const m=roadView.map;
  if(!showLocations){for(const marker of roadView.places.values())marker.getElement().style.display='none';return}
  const ids=new Set();for(const p of state.points){if(!Number.isFinite(p.lat)||!Number.isFinite(p.lon))continue;ids.add(p.id);let marker=roadView.places.get(p.id);
  if(!marker){const el=document.createElement('div');el.className='navigation-place';el.tabIndex=0;el.setAttribute('role','button');
  const icon=document.createElement('span');icon.className='navigation-place-icon';const label=document.createElement('span');label.className='navigation-place-label';label.hidden=true;el.append(icon,label);
- const open=()=>{const current=state.points.find(x=>x.id===p.id);if(!current)return;const popup=document.createElement('div'),name=document.createElement('b'),category=document.createElement('p'),destination=document.createElement('button');name.textContent=current.name;category.textContent=current.category||'Local';destination.textContent='Ir para este local';destination.onclick=()=>{chooseEndpoint('dest',current.id,current.name);openPlanner()};popup.append(name,category,destination);new maplibregl.Popup({offset:18,closeButton:true}).setLngLat([current.lon,current.lat]).setDOMContent(popup).addTo(m)};
+ const open=()=>openNavigationPoint(p.id);
  el.onclick=e=>{e.stopPropagation();open()};el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
  marker=new maplibregl.Marker({element:el,anchor:'center',pitchAlignment:'viewport',rotationAlignment:'viewport',subpixelPositioning:true}).setLngLat([p.lon,p.lat]).addTo(m);roadView.places.set(p.id,marker);
  }

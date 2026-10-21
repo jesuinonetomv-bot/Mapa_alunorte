@@ -2,7 +2,7 @@ const accessGate={allowed:false,admin:false,identityReady:false,generation:0,wat
 function gateStatus(message){document.getElementById('gateStatus').textContent=message}
 function disconnectMapData(){for(const unsubscribe of accessGate.unsubscribers.splice(0))try{unsubscribe()}catch(e){}firebaseListening=false}
 function clearPrivateMap(){
- disconnectMapData();
+ closePointEditor();pointOverrides={};disconnectMapData();
  if(typeof clearRoute==='function')clearRoute();
  recording=false;activeTraceIndex=null;studio.dirty=false;studio.selected=null;studio.points=[];studio.roads={};studio.layers=[];studio.handles=[];studio.undo=[];studio.redo=[];studio.base=null;studio.tool='select';editor.base=null;editor.versions=null;editor.undo=[];editor.active=false;editor.selected=null;editor.handles=[];rawRoads={};roadRevisions={};remotePlaces=[];SEED_TRACK=[];SEED_POINTS=[];
  state={traces:[],points:[],blockedEdges:[],recordedCount:0,drawnRoadIds:[],remoteRoadIds:[]};pointLayers=[];roadLayers=[];
