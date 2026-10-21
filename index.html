@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mapa Alunorte</title>
-<meta name="mapa-revision" content="web-93edbda826823d46">
+<meta name="mapa-revision" content="web-fb323bbb5d614f66">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--dark:#444d55;--accent:#43807a;--danger:#b95946;--road:#566168;--route:#1976d2}
@@ -138,11 +138,13 @@ button{transition:background .15s,box-shadow .15s}button:focus-visible{outline:3
 #perspectiveMap .navigation-place-label{box-shadow:none;background:#ffffffe8}
 </style><style>
 #pointEditor{position:absolute;z-index:1950;bottom:12px;left:12px;width:min(420px,calc(100% - 24px));max-height:65dvh;overflow:auto;padding:18px;border-radius:22px;background:#fff;box-shadow:0 6px 32px #142f5340;color:#142f53}#pointEditor label{display:block;font-size:13px;margin:9px 0}#pointEditor input{width:100%;min-height:42px;margin-top:4px}#pointEditor .coordinates{display:grid;grid-template-columns:1fr 1fr;gap:10px}#pointEditorStatus{font-size:13px;line-height:1.4}.point-popup-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.point-popup-actions button{min-height:42px;font-size:13px}.point-delete{background:#b8423e!important;color:#fff!important}
+</style><style>
+.point-edit-handle{width:48px!important;height:48px!important;touch-action:none!important;cursor:grab!important;pointer-events:auto!important;user-select:none;-webkit-user-select:none}.point-edit-handle:active{cursor:grabbing!important}.point-edit-handle span{display:flex;align-items:center;justify-content:center;width:48px;height:48px;background:#ef8c19;border:4px solid #fff;border-radius:50%;color:#142f53;font-size:30px;font-weight:bold;box-shadow:0 2px 10px #142f5360;pointer-events:none;touch-action:none}.point-edit-handle:focus-visible{outline:3px solid #142f53;border-radius:50%}
 </style></head>
 <body class="access-locked">
 <section id="accessGate" role="region" aria-label="Acesso restrito ao mapa"><div class="gate-card"><h1>Mapa Alunorte</h1><h2>Acesso restrito</h2><p>O mapa e as rotas são liberados somente com localização atual próxima das vias da refinaria, em uma área de aproximadamente 3 km.</p><p id="gateStatus" role="status">Conectando ao serviço de acesso…</p><button id="gateGps">Validar minha localização</button><button id="gateAdminButton" class="dark">Entrar como administrador</button><form id="gateAdminForm" hidden><input id="gateEmail" type="email" autocomplete="username" placeholder="E-mail do administrador" required aria-label="E-mail do administrador"><input id="gatePassword" type="password" autocomplete="current-password" placeholder="Senha" required aria-label="Senha do administrador"><button>Entrar</button></form><small>Administradores autenticados podem entrar de qualquer localização.</small></div></section>
 <header>
-  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.33 Navegação</span></h1><small>Navegação interna • Alunorte</small></div>
+  <div><h1>Mapa Alunorte <span style="font-size:11px;opacity:.7">v0.34 Navegação</span></h1><small>Navegação interna • Alunorte</small></div>
   <div id="gpsHeader"><span class="dot"></span>GPS</div>
 </header>
 <div id="app">
@@ -314,7 +316,7 @@ const editor={authorized:false,active:false,selected:null,handles:[],undo:[],bas
 let SEED_TRACK=[];
 let SEED_POINTS=[];
 let pointOverrides={};
-const pointEditor={id:null,revision:0,marker:null,busy:false,popup:null};
+const pointEditor={id:null,revision:0,marker:null,busy:false,popup:null,mapDragging:null};
 const STORAGE_KEY = "mapa_alunorte_v05";
 
 const map=L.map("map",{zoomControl:false});
@@ -322,6 +324,7 @@ map.createPane('recordingsPane');map.getPane('recordingsPane').style.zIndex=410;
 map.createPane('drawnPane');map.getPane('drawnPane').style.zIndex=420;
 map.createPane('routePane');map.getPane('routePane').style.zIndex=450;map.getPane('routePane').style.pointerEvents='none';
 map.createPane('locationsPane');map.getPane('locationsPane').style.zIndex=600;
+map.createPane('pointEditPane');map.getPane('pointEditPane').style.zIndex=690;
 let showDrawn=true,showLocations=true;
 
 L.control.zoom({position:"topright"}).addTo(map);
@@ -624,7 +627,7 @@ function createPointPopup(id){
  const go=document.createElement('button');go.textContent='Ir para este local';go.onclick=()=>{chooseEndpoint('dest',id,point.name);openPlanner()};actions.append(go);
  if(canManagePoints()){const edit=document.createElement('button'),remove=document.createElement('button');edit.textContent='Editar';edit.onclick=()=>openPointEditor(id);remove.textContent='Excluir';remove.className='point-delete';remove.onclick=()=>deleteManagedPoint(id);actions.append(edit,remove)}return root;
 }
-function closePointEditor(){if(pointEditor.marker){map.removeLayer(pointEditor.marker);pointEditor.marker=null}document.getElementById('pointEditor').hidden=true;pointEditor.id=null;if(pointEditor.popup){pointEditor.popup.remove();pointEditor.popup=null}}
+function closePointEditor(){stopPointPositionEdit();document.getElementById('pointEditor').hidden=true;pointEditor.id=null;if(pointEditor.popup){pointEditor.popup.remove();pointEditor.popup=null}}
 function openPointEditor(id){
  if(!canManagePoints()||pointEditor.busy)return;const point=state.points.find(p=>p.id===id);if(!point)return;
  closePointEditor();map.closePopup();closePlanner();document.querySelector('aside').hidden=true;pointEditor.id=id;pointEditor.revision=point.pointRevision||0;
@@ -650,10 +653,27 @@ async function deleteManagedPoint(id){
 document.getElementById('pointEditorForm').onsubmit=saveManagedPoint;
 document.getElementById('closePointEditor').onclick=closePointEditor;
 document.getElementById('deletePointEdit').onclick=()=>deleteManagedPoint(pointEditor.id);
-document.getElementById('movePointOnMap').onclick=()=>{
- if(!canManagePoints()||pointEditor.busy)return;try{const p=validatePointEdit({name:document.getElementById('editPointName').value,category:document.getElementById('editPointCategory').value,lat:document.getElementById('editPointLat').value,lon:document.getElementById('editPointLon').value});
- gpsNav.follow=false;setNavigationView('top');if(pointEditor.marker)map.removeLayer(pointEditor.marker);pointEditor.marker=L.marker([p.lat,p.lon],{draggable:true,icon:markerIcon(p.category,p.name),zIndexOffset:2000}).addTo(map);pointEditor.marker.on('dragend',()=>{if(!canManagePoints()){closePointEditor();return}const position=pointEditor.marker.getLatLng();document.getElementById('editPointLat').value=position.lat;document.getElementById('editPointLon').value=position.lng});map.setView([p.lat,p.lon],19);map.panBy([0,map.getSize().y*.22]);document.getElementById('pointEditorStatus').textContent='Arraste o ponto no mapa e toque em Salvar alterações.';}catch(error){document.getElementById('pointEditorStatus').textContent=error.message}
-};
+function stopPointPositionEdit(){
+ if(pointEditor.marker){map.removeLayer(pointEditor.marker);pointEditor.marker=null}
+ if(pointEditor.mapDragging!==null){if(pointEditor.mapDragging)map.dragging.enable();else map.dragging.disable();pointEditor.mapDragging=null}
+}
+function startPointPositionEdit(){
+ if(!canManagePoints()||pointEditor.busy)return;
+ try{
+ if(studio.dirty||editor.active||recording||blockMode)throw Error('Finalize a gravação ou edição das ruas e bloqueios antes de mover o ponto.');
+ const p=validatePointEdit({name:document.getElementById('editPointName').value,category:document.getElementById('editPointCategory').value,lat:document.getElementById('editPointLat').value,lon:document.getElementById('editPointLon').value});
+ gpsNav.follow=false;setNavigationView('top');stopPointPositionEdit();
+ pointEditor.mapDragging=map.dragging.enabled();map.dragging.disable();
+ const icon=L.divIcon({className:'point-edit-handle',html:'<span aria-hidden="true">✥</span>',iconSize:[48,48],iconAnchor:[24,24]});
+ pointEditor.marker=L.marker([p.lat,p.lon],{pane:'pointEditPane',draggable:true,autoPan:false,bubblingMouseEvents:false,icon,zIndexOffset:2000,title:'Arraste para ajustar a posição do ponto',alt:'Ponto em edição: arraste o marcador laranja'}).addTo(map);
+ pointEditor.marker.on('dragstart',()=>{gpsNav.follow=false;map.dragging.disable()});
+ pointEditor.marker.on('dragend',()=>{if(!canManagePoints()){closePointEditor();return}const position=pointEditor.marker.getLatLng();document.getElementById('editPointLat').value=position.lat;document.getElementById('editPointLon').value=position.lng;document.getElementById('pointEditorStatus').textContent='Posição ajustada. Toque em Salvar alterações para confirmar.'});
+ map.setView([p.lat,p.lon],19);map.panBy([0,map.getSize().y*.22]);
+ document.getElementById('pointEditorStatus').textContent='Arraste o marcador LARANJA. O mapa está travado até salvar ou fechar a edição.';
+ }catch(error){stopPointPositionEdit();document.getElementById('pointEditorStatus').textContent=error.message}
+}
+document.getElementById('movePointOnMap').onclick=startPointPositionEdit;
+
 window.addEventListener('map-auth-changed',()=>{closePointEditor();map.closePopup()});
 function renderPoints(){
  pointLayers.forEach(x=>map.removeLayer(x));pointLayers=[];
@@ -1321,7 +1341,7 @@ document.getElementById('editSave').onclick=saveEdit;
 document.getElementById('adminLogout').onclick=async()=>{if(editor.busy||studio.saving)return;if(studio.dirty&&!confirm('Sair e descartar o desenho ainda não salvo?'))return;studio.dirty=false;studio.points=[];studio.selected=null;studio.tool='select';map.dragging.enable();endEdit();await window.fbMap.logout();document.getElementById('adminStatus').textContent='Sessão encerrada.'};
 window.addEventListener('map-auth-changed',refreshAdmin);
 function studioStatus(t){document.getElementById('studioStatus').textContent=t}
-function canDraw(){return editor.authorized&&!editor.active&&!recording&&!blockMode&&!studio.saving}
+function canDraw(){return !pointEditor.marker&&editor.authorized&&!editor.active&&!recording&&!blockMode&&!studio.saving}
 function checkpoint(){studio.undo.push(studioModel());if(studio.undo.length>60)studio.undo.shift();studio.redo=[];studio.dirty=true}
 function syncStudioGeometry(){state.traces=state.traces.slice(0,state.recordedCount);state.drawnRoadIds=Object.keys(studio.roads).sort();state.drawnRoadIds.forEach(id=>state.traces.push(studioGeometry(studio.roads[id])))}
 function studioSnap(p,exclude=null){let best=null;for(const [id,r] of Object.entries(studio.roads)){if(id===exclude)continue;const line=studioGeometry(r);for(let j=1;j<line.length;j++){const q=project(p,line[j-1],line[j]);if(q.d<=8&&(!best||q.d<best.d))best=q}}return best?best.p:p}
